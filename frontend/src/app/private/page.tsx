@@ -6,13 +6,13 @@ import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { useAuthStore } from '../../store/authStore';
 import { useGameStore } from '../../store/gameStore';
-import { connectSocket, getSocket } from '../../lib/socket';
+import { connectSocket } from '../../lib/socket';
 import { ToastContainer } from '../../components/ui/Toast';
 
 export default function PrivateRoomPage() {
   const router = useRouter();
-  const { user, hydrate } = useAuthStore();
-  const { setMatchStart, addToast } = useGameStore();
+  const { user, token, hydrate } = useAuthStore();
+  const { setMatchStart, addToast, setRoomExpiresAt } = useGameStore();
   
   const searchParams = useSearchParams();
   const initialCode = searchParams.get('code');
@@ -26,10 +26,12 @@ export default function PrivateRoomPage() {
   useEffect(() => { hydrate(); }, []);
 
   useEffect(() => {
-    const socket = getSocket();
-    if (socket) {
-      socket.on('private_room_created', ({ roomCode }) => {
+    if (!token) return;
+    const socket = connectSocket(token);
+
+      socket.on('private_room_created', ({ roomCode, expiresAt }) => {
         setGeneratedCode(roomCode);
+        setRoomExpiresAt(expiresAt ?? null);
         addToast(`Room created: ${roomCode}`, 'success');
       });
 
@@ -42,14 +44,12 @@ export default function PrivateRoomPage() {
         addToast(msg, 'error');
         setJoining(false);
       });
-    }
-
     return () => {
       socket?.off('private_room_created');
       socket?.off('match_start');
       socket?.off('error_event');
     };
-  }, [router, setMatchStart, addToast]);
+  }, [token, router, setMatchStart, addToast, setRoomExpiresAt]);
 
   const handleCreateRoom = () => {
     if (!user) { router.push('/login'); return; }
@@ -75,7 +75,7 @@ export default function PrivateRoomPage() {
 
       <main style={{ flex: 1, padding: '48px 24px', maxWidth: 800, margin: '0 auto', width: '100%' }}>
         <h1 className="font-hand" style={{ fontSize: '3rem', fontWeight: 700, textAlign: 'center', marginBottom: 40, color: 'var(--wb-ink)' }}>
-          🤝 Play with Friend
+          Play with Friend
         </h1>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 32 }}>
@@ -114,7 +114,7 @@ export default function PrivateRoomPage() {
                   </select>
                 </div>
                 <button className="wb-btn wb-btn-primary" style={{ width: '100%' }} onClick={handleCreateRoom}>
-                  ✨ Create Room
+                  Create Room
                 </button>
               </>
             ) : (
@@ -155,7 +155,7 @@ export default function PrivateRoomPage() {
               onClick={handleJoinRoom}
               disabled={joining}
             >
-              {joining ? '⏳ Joining...' : '⚔️ Join Match'}
+              {joining ? 'Joining...' : 'Join Match'}
             </button>
           </motion.div>
         </div>

@@ -1,5 +1,7 @@
 'use strict';
 
+const ENGLISH_WORDS = require('an-array-of-english-words');
+
 const WORD_LIST = [
   'ABOUT','ABOVE','ABUSE','ACTOR','ACUTE','ADMIT','ADOPT','ADULT','AFTER','AGAIN',
   'AGENT','AGREE','AHEAD','ALARM','ALBUM','ALERT','ALIKE','ALIVE','ALLEY','ALLOW',
@@ -85,14 +87,42 @@ const WORD_LIST = [
 ];
 
 // HPC: pre-built Set for O(1) lookup — constructed once at startup
-const WORD_SET = new Set(WORD_LIST);
+const WORD_RE = /^[A-Z]+$/;
 
-function getRandomWord() {
-  return WORD_LIST[(Math.random() * WORD_LIST.length) | 0];
+function normaliseWord(word) {
+  return String(word || '').trim().toUpperCase().replace(/[^A-Z]/g, '');
 }
 
-function isValidWord(word) {
-  return WORD_SET.has(word.toUpperCase());
+// Keep generated answers curated and readable, but validate guesses against a
+// much larger English dictionary so real words are not rejected during play.
+const ANSWER_LIST = Array.from(new Set(
+  WORD_LIST
+    .map(normaliseWord)
+    .filter(word => word.length >= 2 && word.length <= 16 && WORD_RE.test(word))
+));
+
+// HPC: pre-built Set for O(1) lookup, constructed once at startup.
+const WORD_SET = new Set([
+  ...ANSWER_LIST,
+  ...ENGLISH_WORDS
+    .map(normaliseWord)
+    .filter(word => word.length >= 2 && word.length <= 16 && WORD_RE.test(word)),
+]);
+
+function getRandomWord(length) {
+  if (!length) return ANSWER_LIST[(Math.random() * ANSWER_LIST.length) | 0];
+  const candidates = ANSWER_LIST.filter(word => word.length === length);
+  return candidates[(Math.random() * candidates.length) | 0];
 }
 
-module.exports = { WORD_LIST, WORD_SET, getRandomWord, isValidWord };
+function isValidWord(word, { minLength = 2, maxLength = 16 } = {}) {
+  const candidate = normaliseWord(word);
+  return (
+    candidate.length >= minLength &&
+    candidate.length <= maxLength &&
+    WORD_RE.test(candidate) &&
+    WORD_SET.has(candidate)
+  );
+}
+
+module.exports = { WORD_LIST: ANSWER_LIST, WORD_SET, getRandomWord, isValidWord, normaliseWord };

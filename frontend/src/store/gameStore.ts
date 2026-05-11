@@ -30,6 +30,9 @@ interface GameState {
   currentChainWord: string | null;
   scores: { you: number; opponent: number };
   chainHistory: { username: string; word: string }[];
+  targetScore: number | null;
+  endsAt: number | null;
+  nextTurnId: string | null;
   setMatchStart: (p: MatchStartPayload) => void;
   setCurrentGuess: (g: string) => void;
   addGuessResult: (r: GuessResult) => void;
@@ -41,8 +44,9 @@ interface GameState {
   removeToast: (id: number) => void;
   setShakeRow: (row: number | null) => void;
   setOnlineCount: (count: number) => void;
-  updateChain: (word: string, username: string, youScore: number, oppScore: number) => void;
-  updateAnagram: (scrambled: string, username: string, youScore: number, oppScore: number) => void;
+  updateChain: (word: string, username: string, youScore: number, oppScore: number, nextTurnId?: string | null) => void;
+  updateAnagram: (scrambled: string | null, username: string, youScore: number, oppScore: number) => void;
+  finishMatch: (winner: 'you' | 'opponent' | null, secretWord?: string) => void;
   resetGame: () => void;
   resetGauntlet: () => void;
   setRoomExpiresAt: (at: number | null) => void;
@@ -73,6 +77,9 @@ const getInitState = () => ({
   currentChainWord: null as string | null,
   scores: { you: 0, opponent: 0 }, 
   chainHistory: [] as { username: string; word: string }[],
+  targetScore: null as number | null,
+  endsAt: null as number | null,
+  nextTurnId: null as string | null,
 });
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -91,19 +98,31 @@ export const useGameStore = create<GameState>((set, get) => ({
     secretWord: null, 
     winner: null,
     mode: p.mode || 'brawl',
+    scrambledWord: p.scrambled ?? null,
+    currentChainWord: p.currentWord ?? null,
+    targetScore: p.targetScore ?? null,
+    endsAt: p.endsAt ?? null,
+    nextTurnId: p.nextTurnId ?? null,
     scores: { you: 0, opponent: 0 },
-    chainHistory: [],
+    chainHistory: p.currentWord ? [{ username: 'Start', word: p.currentWord }] : [],
   }),
 
-  updateChain: (word, username, youScore, oppScore) => set((s) => ({
+  updateChain: (word, username, youScore, oppScore, nextTurnId = null) => set((s) => ({
     currentChainWord: word,
     chainHistory: [...s.chainHistory, { username, word }],
     scores: { you: youScore, opponent: oppScore },
+    nextTurnId,
   })),
 
-  updateAnagram: (scrambled, username, youScore, oppScore) => set((s) => ({
+  updateAnagram: (scrambled, _username, youScore, oppScore) => set({
     scrambledWord: scrambled,
     scores: { you: youScore, opponent: oppScore },
+  }),
+
+  finishMatch: (winner, secretWord) => set((s) => ({
+    status: winner === 'you' ? 'won' : winner === 'opponent' ? 'lost' : 'draw',
+    winner,
+    secretWord: secretWord ?? s.secretWord,
   })),
 
   setCurrentGuess: (g) => set({ currentGuess: g.substring(0, WORD_LENGTH).toUpperCase() }),

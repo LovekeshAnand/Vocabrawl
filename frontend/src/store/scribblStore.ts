@@ -15,6 +15,29 @@ interface ChatMessage {
   system: boolean;
 }
 
+interface ScribblLobbyData {
+  id: string;
+  status: ScribblState['status'];
+  players: ScribblPlayer[];
+  round: number;
+  totalRounds: number;
+  hint: string | null;
+}
+
+interface ScribblTurnData {
+  drawer: string;
+  hint: string | null;
+  round: number;
+  totalRounds: number;
+  durationMs: number;
+  players: ScribblPlayer[];
+}
+
+interface ScribblTurnEndData {
+  gameOver?: boolean;
+  [key: string]: unknown;
+}
+
 interface ScribblState {
   lobbyId: string | null;
   status: 'waiting' | 'playing' | 'finished';
@@ -28,17 +51,17 @@ interface ScribblState {
   chat: ChatMessage[];
   durationMs: number;
   timeLeft: number;
-  turnEndData: any | null;
+  turnEndData: ScribblTurnEndData | null;
 
-  setLobby: (data: any) => void;
+  setLobby: (data: ScribblLobbyData) => void;
   updatePlayers: (players: ScribblPlayer[]) => void;
-  startTurn: (data: any, socketId: string) => void;
+  startTurn: (data: ScribblTurnData, socketId: string) => void;
   updateHint: (hint: string) => void;
   setSecretWord: (word: string | null) => void;
   addChatMessage: (msg: Omit<ChatMessage, 'id'>) => void;
   updateScores: (scores: Record<string, number>) => void;
   markPlayerSolved: (socketId: string) => void;
-  endTurn: (data: any) => void;
+  endTurn: (data: ScribblTurnEndData) => void;
   updateTimeLeft: (ms: number) => void;
   resetGame: () => void;
 }

@@ -25,6 +25,12 @@ export interface MatchStartPayload {
   wordLength: number;
   maxGuesses: number;
   mode?: 'brawl' | 'word_chain' | 'anagrams' | 'scribbl';
+  scrambled?: string;
+  currentWord?: string;
+  targetScore?: number;
+  endsAt?: number;
+  nextTurnId?: string;
+  ranked?: boolean;
 }
 
 export interface GauntletResult {

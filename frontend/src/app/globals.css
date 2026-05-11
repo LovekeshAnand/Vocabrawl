@@ -20,6 +20,8 @@ html { scroll-behavior: smooth; }
   --wb-indigo:     #4F46E5;
   --wb-blue:       #2563EB;
   --wb-purple:     #7C3AED;
+  --wb-red:        #DC2626;
+  --wb-amber:      #D97706;
   --shadow-sm:     2px 2px 0 #2D2D2D;
   --shadow-md:     3px 3px 0 #2D2D2D;
   --shadow-lg:     5px 5px 0 #2D2D2D;
@@ -119,6 +121,7 @@ body {
 .wb-btn-blue    { background: var(--wb-blue); color: white; border-color: var(--wb-blue); }
 .wb-btn-indigo  { background: var(--wb-indigo); color: white; border-color: var(--wb-indigo); }
 .wb-btn-green   { background: var(--wb-correct); color: white; border-color: var(--wb-correct); }
+.wb-btn-red     { background: var(--wb-red); color: white; border-color: var(--wb-red); }
 .wb-btn-sm      { padding: 7px 18px; font-size: 1rem; }
 .wb-btn-lg      { padding: 16px 40px; font-size: 1.4rem; }
 
@@ -138,12 +141,19 @@ body {
 .wb-divider { border: none; border-top: 2px dashed var(--wb-grid); margin: 24px 0; }
 .wb-progress-track { height: 8px; background: var(--wb-grid); border: 1.5px solid var(--wb-border); border-radius: 4px; overflow: hidden; }
 .wb-progress-fill  { height: 100%; background: var(--wb-ink); border-radius: 4px; transition: width 0.3s ease; }
+.wb-spinner {
+  border: 3px solid var(--wb-grid);
+  border-top-color: var(--wb-ink);
+  border-radius: 50%;
+  animation: wb-spin 0.8s linear infinite;
+}
 
 /* ── Animations ── */
 @keyframes toast-in {
   from { opacity: 0; transform: translateX(-50%) translateY(-12px); }
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
+@keyframes wb-spin { to { transform: rotate(360deg); } }
 ::-webkit-scrollbar       { width: 8px; }
 ::-webkit-scrollbar-track { background: var(--wb-paper); }
 ::-webkit-scrollbar-thumb { background: var(--wb-ink); border-radius: 4px; }

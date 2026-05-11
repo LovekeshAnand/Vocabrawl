@@ -1,16 +1,25 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../../store/gameStore';
 import { getSocket } from '../../lib/socket';
 
-export function AnagramUI({ matchId }: { matchId: string }) {
-  const { scrambledWord, scores, you, opponent, addToast } = useGameStore();
+export function AnagramUI({ matchId, disabled = false }: { matchId: string; disabled?: boolean }) {
+  const { scrambledWord, scores, you, opponent, targetScore, endsAt } = useGameStore();
   const [input, setInput] = useState('');
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!endsAt) return;
+    const update = () => setSecondsLeft(Math.max(0, Math.ceil((endsAt - Date.now()) / 1000)));
+    update();
+    const timer = setInterval(update, 500);
+    return () => clearInterval(timer);
+  }, [endsAt]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input) return;
+    if (!input || disabled) return;
     const socket = getSocket();
     socket?.emit('submit_anagram_guess', { matchId, guess: input.toUpperCase().trim() });
     setInput('');
@@ -22,10 +31,12 @@ export function AnagramUI({ matchId }: { matchId: string }) {
         <div className="wb-card" style={{ padding: '12px 24px', textAlign: 'center', flex: 1, marginRight: 12 }}>
           <p className="font-hand" style={{ fontSize: '1.2rem' }}>{you?.username}</p>
           <p className="font-hand" style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--wb-blue)' }}>{scores.you}</p>
+          <p style={{ fontSize: '0.75rem', color: 'var(--wb-ink-faint)' }}>Target {targetScore ?? 250}</p>
         </div>
         <div className="wb-card" style={{ padding: '12px 24px', textAlign: 'center', flex: 1, marginLeft: 12 }}>
           <p className="font-hand" style={{ fontSize: '1.2rem' }}>{opponent?.username}</p>
           <p className="font-hand" style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--wb-red)' }}>{scores.opponent}</p>
+          <p style={{ fontSize: '0.75rem', color: 'var(--wb-ink-faint)' }}>{secondsLeft !== null ? `${secondsLeft}s left` : 'Speed round'}</p>
         </div>
       </div>
 
@@ -52,13 +63,14 @@ export function AnagramUI({ matchId }: { matchId: string }) {
           placeholder="Type your answer..."
           value={input}
           onChange={(e) => setInput(e.target.value.toUpperCase())}
+          disabled={disabled}
           autoFocus
         />
-        <button type="submit" className="wb-btn wb-btn-primary">Solve!</button>
+        <button type="submit" className="wb-btn wb-btn-primary" disabled={disabled}>Solve!</button>
       </form>
 
       <div style={{ textAlign: 'center', color: 'var(--wb-ink-faint)' }}>
-        <p className="font-hand" style={{ fontSize: '1.1rem' }}>First to solve gets 50 points!</p>
+        <p className="font-hand" style={{ fontSize: '1.1rem' }}>{disabled ? 'Match complete' : 'First to solve each scramble gets 50 points.'}</p>
       </div>
     </div>
   );

@@ -26,11 +26,60 @@ const _matches      = new Map();   // matchId → MatchState
 const _queue        = [];          // [{socketId, userId, username, elo, mongoId}]
 const _privateRooms = new Map();   // roomCode → { host, guest, mode, expires, visibility }
 
+const VALID_ROOM_VISIBILITY = new Set(['private', 'public']);
+const VALID_MODES = new Set(Object.values(GAME.MODES));
+const CHAIN_WORD_RE = /^[A-Z]{2,16}$/;
+
+function _playerFromUser(socketId, user) {
+  return {
+    socketId,
+    userId:   String(user.id ?? user._id),
+    mongoId:  user._id ?? user.mongoId ?? user.id,
+    username: user.username || 'Player',
+    elo:      Number(user.elo ?? GAME.ELO.DEFAULT_RATING),
+  };
+}
+
+function _normaliseRoomCode(roomCode) {
+  return String(roomCode || '').trim().toUpperCase();
+}
+
+function _normaliseMode(mode) {
+  return VALID_MODES.has(mode) ? mode : GAME.MODES.BRAWL;
+}
+
+function _normaliseVisibility(visibility) {
+  return VALID_ROOM_VISIBILITY.has(visibility) ? visibility : 'private';
+}
+
+function _removeRoomsForSocket(socketId) {
+  let removed = false;
+  for (const [code, room] of _privateRooms.entries()) {
+    if (room.host.socketId === socketId || room.guest?.socketId === socketId) {
+      _privateRooms.delete(code);
+      removed = true;
+    }
+  }
+  return removed;
+}
+
 function getPublicRooms() {
   const rooms = [];
+  const now = Date.now();
   for (const [code, room] of _privateRooms.entries()) {
+    if (now > room.expires) {
+      _privateRooms.delete(code);
+      continue;
+    }
     if (room.visibility === 'public') {
-      rooms.push({ code, host: room.host.username, mode: room.mode, playerCount: room.guest ? 2 : 1 });
+      rooms.push({
+        code,
+        host: room.host.username,
+        mode: room.mode,
+        playerCount: room.guest ? 2 : 1,
+        maxPlayers: 2,
+        expiresAt: room.expires,
+      });
     }
   }
   return rooms;
@@ -49,20 +98,38 @@ function _checkRateLimit(socketId) {
 
 // ── Matchmaking Queue ─────────────────────────────────────────────────────────
 
-function joinQueue(socketId, user) {
+function joinQueue(socketId, user, mode = GAME.MODES.BRAWL) {
   if (_queue.some(p => p.socketId === socketId)) return null;
-  _queue.push({
-    socketId,
-    userId:   user.id,          // string (from JWT)
-    mongoId:  user._id ?? user.id, // ObjectId or string
-    username: user.username,
-    elo:      user.elo,
-  });
-  if (_queue.length >= 2) {
-    const p1 = _queue.shift();
-    const p2 = _queue.shift();
-    return createMatch(p1, p2);
+  _removeRoomsForSocket(socketId);
+
+  const queueMode = _normaliseMode(mode);
+  const player = { ..._playerFromUser(socketId, user), mode: queueMode, queuedAt: Date.now() };
+  let bestIndex = -1;
+  let bestDelta = Infinity;
+  const now = Date.now();
+
+  for (let i = 0; i < _queue.length; i++) {
+    const candidate = _queue[i];
+    if (candidate.userId === player.userId) continue;
+    if (candidate.mode !== queueMode) continue;
+
+    const waitedMs = Math.max(now - candidate.queuedAt, 0);
+    const allowedDelta = 150 + Math.floor(waitedMs / 1000) * 20;
+    const delta = Math.abs(candidate.elo - player.elo);
+
+    if ((delta <= allowedDelta || waitedMs >= GAME.MATCHMAKING_TIMEOUT_MS) && delta < bestDelta) {
+      bestDelta = delta;
+      bestIndex = i;
+    }
   }
+
+  if (bestIndex !== -1) {
+    const p1 = _queue.splice(bestIndex, 1)[0];
+    const p2 = player;
+    return createMatch(p1, p2, queueMode, true);
+  }
+
+  _queue.push(player);
   return null;
 }
 
@@ -74,15 +141,23 @@ function leaveQueue(socketId) {
 // ── Private Rooms ─────────────────────────────────────────────────────────────
 
 function createPrivateRoom(socketId, user, mode = GAME.MODES.BRAWL, visibility = 'private') {
-  const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase().padEnd(6, 'X');
+  _removeRoomsForSocket(socketId);
+
+  let roomCode;
+  do {
+    roomCode = Math.random().toString(36).substring(2, 8).toUpperCase().padEnd(6, 'X');
+  } while (_privateRooms.has(roomCode));
+
   const expiresAt = Date.now() + (GAME.PRIVATE_ROOM_EXPIRE_MS || 300_000);
+  const roomMode = _normaliseMode(mode);
+  const roomVisibility = _normaliseVisibility(visibility);
   
   const room = {
     code:       roomCode,
-    host:       { socketId, userId: user.id, mongoId: user.mongoId || user.id, username: user.username, elo: user.elo },
+    host:       _playerFromUser(socketId, user),
     guest:      null,
-    mode,
-    visibility,
+    mode:       roomMode,
+    visibility: roomVisibility,
     expires:    expiresAt,
   };
   
@@ -97,11 +172,11 @@ function createPrivateRoom(socketId, user, mode = GAME.MODES.BRAWL, visibility =
     }
   }, (GAME.PRIVATE_ROOM_EXPIRE_MS || 300_000));
   
-  return { roomCode, expiresAt };
+  return { roomCode, expiresAt, mode: roomMode, visibility: roomVisibility };
 }
 
 function joinPrivateRoom(roomCode, socketId, user) {
-  const code = roomCode?.toUpperCase();
+  const code = _normaliseRoomCode(roomCode);
   const room = _privateRooms.get(code);
   
   console.log(`[matchService] Join attempt: ${code} by ${user.username} (UserID: ${user.id})`);
@@ -116,15 +191,17 @@ function joinPrivateRoom(roomCode, socketId, user) {
     return { error: 'Room has expired' };
   }
 
+  const player = _playerFromUser(socketId, user);
+
   // If host is rejoining (e.g. on refresh), just update their socket ID
-  if (room.host.userId === user.id) {
+  if (room.host.userId === player.userId) {
     console.log(`[matchService] Host re-joined room: ${code}`);
     room.host.socketId = socketId;
     return { isHost: true, room };
   }
 
   if (room.guest) {
-    if (room.guest.userId === user.id) {
+    if (room.guest.userId === player.userId) {
       console.log(`[matchService] Guest re-joined room: ${code}`);
       room.guest.socketId = socketId;
       return { isGuest: true, room };
@@ -133,7 +210,7 @@ function joinPrivateRoom(roomCode, socketId, user) {
   }
 
   console.log(`[matchService] Room joined: ${code} - Host: ${room.host.username}, Guest: ${user.username}`);
-  room.guest = { socketId, userId: user.id, mongoId: user.mongoId || user.id, username: user.username, elo: user.elo };
+  room.guest = player;
   
   const matchResult = createMatch(room.host, room.guest, room.mode);
   _privateRooms.delete(code);
@@ -142,20 +219,26 @@ function joinPrivateRoom(roomCode, socketId, user) {
 
 // ── Match lifecycle ───────────────────────────────────────────────────────────
 
-function createMatch(p1, p2, mode = GAME.MODES.BRAWL) {
+function createMatch(p1, p2, mode = GAME.MODES.BRAWL, ranked = false) {
   const matchId    = `m_${Date.now().toString(36)}_${(Math.random() * 0xffff | 0).toString(36)}`;
-  const secretWord = getRandomWord();
+  mode = _normaliseMode(mode);
+  const secretWord = getRandomWord(GAME.WORD_LENGTH);
   
   let gameData = { secretWord };
   if (mode === GAME.MODES.ANAGRAMS) {
     gameData.scrambled = generateAnagram(secretWord);
+    gameData.targetScore = GAME.ANAGRAM_TARGET_SCORE;
   } else if (mode === GAME.MODES.WORD_CHAIN) {
     gameData.currentWord = secretWord; // Starting word
+    gameData.targetScore = GAME.CHAIN_TARGET_SCORE;
+    gameData.usedWords = new Set([secretWord]);
+    gameData.turnSocketId = p1.socketId;
   }
 
   const match = {
     id:         matchId,
     mode,
+    ranked,
     ...gameData,
     status:     'active',
     startedAt:  process.hrtime.bigint(),
@@ -166,6 +249,7 @@ function createMatch(p1, p2, mode = GAME.MODES.BRAWL) {
     },
     opponentOf: { [p1.socketId]: p2.socketId, [p2.socketId]: p1.socketId },
     history:    [], // For word chain
+    endsAt:     Date.now() + GAME.ROUND_TIME_LIMIT_MS,
   };
 
   _matches.set(matchId, match);
@@ -173,11 +257,21 @@ function createMatch(p1, p2, mode = GAME.MODES.BRAWL) {
   // Auto-expire stale matches
   setTimeout(() => {
     if (_matches.get(matchId)?.status === 'active') {
-      _finishMatch(matchId, null);
+      _finishMatch(matchId, _winnerByScore(match));
     }
   }, GAME.ROUND_TIME_LIMIT_MS + 2000);
 
-  return { matchId, p1, p2 };
+  return { matchId, p1, p2, ranked };
+}
+
+function _winnerByScore(match) {
+  if (!match || match.mode === GAME.MODES.BRAWL) return null;
+  const players = Object.entries(match.players);
+  if (players.length < 2) return null;
+  const [aId, a] = players[0];
+  const [bId, b] = players[1];
+  if ((a.score ?? 0) === (b.score ?? 0)) return null;
+  return (a.score ?? 0) > (b.score ?? 0) ? aId : bId;
 }
 
 function getMatch(matchId) {
@@ -284,24 +378,46 @@ function processWordChain(matchId, socketId, word) {
   const player = match.players[socketId];
   const opponentId = match.opponentOf[socketId];
   if (!player) return { ok: false, error: 'not_in_match' };
-
-  if (!isValidWord(word)) {
-    return { ok: false, error: 'not_in_dictionary', message: 'Not in word list' };
+  if (match.turnSocketId && match.turnSocketId !== socketId) {
+    return { ok: false, error: 'wait_turn', message: 'Wait for your turn' };
   }
 
-  if (!validateChain(match.currentWord, word)) {
+  const submittedWord = String(word || '').trim().toUpperCase();
+
+  if (!CHAIN_WORD_RE.test(submittedWord)) {
+    return { ok: false, error: 'invalid_word', message: 'Use 2-16 letters only' };
+  }
+
+  if (!isValidWord(submittedWord, { minLength: 2, maxLength: 16 })) {
+    return { ok: false, error: 'not_in_dictionary', message: 'Not a recognized English word' };
+  }
+
+  if (match.usedWords?.has(submittedWord)) {
+    return { ok: false, error: 'already_used', message: 'That word has already been used' };
+  }
+
+  if (!validateChain(match.currentWord, submittedWord)) {
     return { ok: false, error: 'invalid_chain', message: `Word must start with ${match.currentWord[match.currentWord.length - 1].toUpperCase()}` };
   }
 
-  match.currentWord = word.toUpperCase();
+  match.currentWord = submittedWord;
+  match.usedWords?.add(submittedWord);
   match.history.push({ socketId, word: match.currentWord });
   player.score += 10;
+  match.turnSocketId = opponentId;
+
+  const matchOver = player.score >= (match.targetScore || GAME.CHAIN_TARGET_SCORE);
+  if (matchOver) _finishMatch(matchId, socketId);
   
   return {
     ok: true,
     word: match.currentWord,
     playerScore: player.score,
     opponentId,
+    nextTurnId: opponentId,
+    matchOver,
+    winner: matchOver ? socketId : null,
+    targetScore: match.targetScore || GAME.CHAIN_TARGET_SCORE,
   };
 }
 
@@ -318,12 +434,22 @@ function processAnagram(matchId, socketId, guess) {
   const opponentId = match.opponentOf[socketId];
   if (!player) return { ok: false, error: 'not_in_match' };
 
-  const isCorrect = guess.toUpperCase() === match.secretWord.toUpperCase();
+  const submittedGuess = String(guess || '').trim().toUpperCase();
+  const isCorrect = submittedGuess === match.secretWord.toUpperCase();
+  let solvedWord;
+  let matchOver = false;
   
   if (isCorrect) {
+    solvedWord = match.secretWord;
     player.score += 50;
-    match.secretWord = getRandomWord();
-    match.scrambled = generateAnagram(match.secretWord);
+    matchOver = player.score >= (match.targetScore || GAME.ANAGRAM_TARGET_SCORE);
+
+    if (matchOver) {
+      _finishMatch(matchId, socketId);
+    } else {
+      match.secretWord = getRandomWord(GAME.WORD_LENGTH);
+      match.scrambled = generateAnagram(match.secretWord);
+    }
   }
   
   return {
@@ -332,6 +458,10 @@ function processAnagram(matchId, socketId, guess) {
     scrambled: match.scrambled,
     playerScore: player.score,
     opponentId,
+    solvedWord,
+    matchOver,
+    winner: matchOver ? socketId : null,
+    targetScore: match.targetScore || GAME.ANAGRAM_TARGET_SCORE,
   };
 }
 
@@ -343,11 +473,12 @@ async function _finishMatch(matchId, winnerId) {
   const match = _matches.get(matchId);
   if (!match || match.status === 'finished') return;
   match.status = 'finished';
+  match.winnerId = winnerId;
 
   const playerList = Object.values(match.players);
   const eloChanges = [];
 
-  if (winnerId) {
+  if (winnerId && match.ranked) {
     const loserId  = match.opponentOf[winnerId];
     const winner   = match.players[winnerId];
     const loser    = match.players[loserId];
@@ -396,7 +527,7 @@ function startGauntlet(socketId, userId) {
     socketId, userId,
     score:       0,
     wordsSolved: 0,
-    secretWord:  getRandomWord(),
+    secretWord:  getRandomWord(GAME.WORD_LENGTH),
     guesses:     0,
     timeLeftMs:  GAME.GAUNTLET_BASE_TIME_MS,
     startedAt:   Date.now(),
@@ -431,7 +562,7 @@ function processGauntletGuess(socketId, guessRaw) {
     session.timeLeftMs  = remaining + bonus;
     session.startedAt   = Date.now();
     secretWord          = session.secretWord;
-    session.secretWord  = getRandomWord();
+    session.secretWord  = getRandomWord(GAME.WORD_LENGTH);
     session.guesses     = 0;
     nextWord            = true;
   } else if (session.guesses >= GAME.MAX_GUESSES) {
@@ -461,6 +592,7 @@ function cleanupPlayer(socketId) {
   leaveQueue(socketId);
   endGauntlet(socketId);
   _lastGuessTime.delete(socketId);
+  return { roomsChanged: _removeRoomsForSocket(socketId) };
 }
 
 module.exports = {

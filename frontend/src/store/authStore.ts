@@ -21,6 +21,11 @@ const setCookie = (name: string, value: string, days = 7) => {
   document.cookie = `${name}=${value};expires=${date.toUTCString()};path=/;SameSite=Lax`;
 };
 
+const setStoredToken = (token: string, useCookie: boolean) => {
+  if (typeof window !== 'undefined') localStorage.setItem(TOKEN_KEY, token);
+  if (useCookie) setCookie(TOKEN_KEY, token);
+};
+
 const deleteCookie = (name: string) => {
   if (typeof document === 'undefined') return;
   document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
@@ -68,9 +73,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Login failed');
       
-      if (get().cookiesAccepted) {
-        setCookie(TOKEN_KEY, data.token);
-      }
+      setStoredToken(data.token, get().cookiesAccepted);
       
       set({ user: data.user, token: data.token, loading: false });
     } catch (e: unknown) {
@@ -89,9 +92,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Registration failed');
       
-      if (get().cookiesAccepted) {
-        setCookie(TOKEN_KEY, data.token);
-      }
+      setStoredToken(data.token, get().cookiesAccepted);
       
       set({ user: data.user, token: data.token, loading: false });
     } catch (e: unknown) {
@@ -110,9 +111,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Guest login failed');
       
-      if (get().cookiesAccepted) {
-        setCookie(TOKEN_KEY, data.token);
-      }
+      setStoredToken(data.token, get().cookiesAccepted);
       
       set({ user: data.user, token: data.token, loading: false });
     } catch (e: unknown) {

@@ -9,6 +9,10 @@ import { Canvas } from './Canvas';
 import confetti from 'canvas-confetti';
 import { GlassCard } from '../ui/GlassCard';
 
+type AudioWindow = Window & typeof globalThis & {
+  webkitAudioContext?: typeof AudioContext;
+};
+
 export function ScribblUI() {
   const { user } = useAuthStore();
   const { 
@@ -29,7 +33,9 @@ export function ScribblUI() {
 
   // HPC: Programmatic Sound Generation (Zero-latency, no assets)
   const playPop = (freq = 600) => {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const AudioContextCtor = window.AudioContext || (window as AudioWindow).webkitAudioContext;
+    if (!AudioContextCtor) return;
+    const ctx = new AudioContextCtor();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = 'sine';
@@ -57,11 +63,11 @@ export function ScribblUI() {
       });
     });
 
-    socket.on('scribbl_player_left', ({ username }: { lobby: any, username: string }) => {
+    socket.on('scribbl_player_left', ({ username }: { username: string }) => {
       addChatMessage({ sender: 'System', message: `${username || 'A player'} has left the lobby.`, system: true });
     });
 
-    socket.on('scribbl_player_joined', ({ username }: { lobby: any, username: string }) => {
+    socket.on('scribbl_player_joined', ({ username }: { username: string }) => {
       addChatMessage({ sender: 'System', message: `${username || 'A player'} has joined the lobby!`, system: true });
     });
 
@@ -70,7 +76,7 @@ export function ScribblUI() {
       socket.off('scribbl_player_left');
       socket.off('scribbl_player_joined');
     };
-  }, []);
+  }, [addChatMessage]);
 
   const handleLeave = () => {
     if (window.confirm('Do you really want to leave this room?')) {

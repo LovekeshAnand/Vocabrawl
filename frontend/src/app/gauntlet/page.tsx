@@ -41,7 +41,6 @@ export default function GauntletPage() {
       }, 100);
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
-      setDisplayTime(gauntletTime);
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [gauntletStatus, gauntletTime]);

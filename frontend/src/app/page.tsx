@@ -168,7 +168,7 @@ export default function HomePage() {
             <div style={{ color: 'var(--wb-blue)', marginBottom: 24 }}><Sparkles size={48} /></div>
             <h3 className="font-hand" style={{ fontSize: '2.2rem', marginBottom: 16 }}>Beautiful Lines</h3>
             <p style={{ color: 'var(--wb-ink-light)', fontSize: '1.1rem', lineHeight: 1.6 }}>
-              Our drawing tools automatically polish your lines, making every sketch look like a masterpiece—even if you're using a mouse!
+              Our drawing tools automatically polish your lines, making every sketch look like a masterpiece, even if you&apos;re using a mouse!
             </p>
           </GlassCard>
 
@@ -193,7 +193,7 @@ export default function HomePage() {
       {/* Pro Features */}
       <section style={{ padding: '100px 24px', background: 'white', borderTop: '2.5px solid var(--wb-border)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-          <h2 className="font-hand" style={{ fontSize: '3.5rem', marginBottom: 60 }}>Why You'll Love VocaBrawl</h2>
+          <h2 className="font-hand" style={{ fontSize: '3.5rem', marginBottom: 60 }}>Why You&apos;ll Love VocaBrawl</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 40 }}>
             {[
               { icon: <Gamepad2 size={32} />, title: "So Smooth", desc: "Built to feel incredibly responsive on any device." },

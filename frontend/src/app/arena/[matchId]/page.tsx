@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Navbar } from '../../../components/layout/Navbar';
 import { Board } from '../../../components/game/Board';
 import { GhostBoard } from '../../../components/game/GhostBoard';
@@ -26,7 +26,7 @@ export default function ArenaPage() {
     status, guesses, currentGuess, you, opponent,
     opponentProgress, secretWord, winner, shakeRow, mode,
     setCurrentGuess, addGuessResult, addOpponentProgress,
-    addToast, setShakeRow, setMatchStart, updateChain, updateAnagram,
+    addToast, setShakeRow, setMatchStart, updateChain, updateAnagram, finishMatch,
   } = useGameStore();
 
   const [helpOpen, setHelpOpen] = useState(false);
@@ -36,18 +36,24 @@ export default function ArenaPage() {
   useEffect(() => {
     const socket = connectSocket(token);
 
-    socket.on('connect', () => {
+    const handleConnect = () => {
       setConnected(true);
       if (matchId) socket.emit('rejoin_match', { matchId });
-    });
-    socket.on('disconnect', () => setConnected(false));
+    };
+    const handleDisconnect = () => setConnected(false);
+
+    queueMicrotask(() => setConnected(socket.connected));
+    if (socket.connected && matchId) socket.emit('rejoin_match', { matchId });
+
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
 
     socket.on('match_start', (payload) => {
       setMatchStart(payload);
       if (payload.mode === 'anagrams' && payload.scrambled) {
         updateAnagram(payload.scrambled, '', 0, 0);
       } else if (payload.mode === 'word_chain' && payload.currentWord) {
-        updateChain(payload.currentWord, 'System', 0, 0);
+        updateChain(payload.currentWord, 'Start', 0, 0, payload.nextTurnId ?? null);
       }
     });
 
@@ -67,38 +73,50 @@ export default function ArenaPage() {
       }
     });
 
-    socket.on('chain_update', ({ word, playerScore, lastPlayerId }) => {
+    socket.on('chain_update', ({ word, playerScore, lastPlayerId, nextTurnId }) => {
       const isYou = lastPlayerId === socket.id;
       const youScore = isYou ? playerScore : useGameStore.getState().scores.you;
       const oppScore = !isYou ? playerScore : useGameStore.getState().scores.opponent;
-      const username = isYou ? you?.username : opponent?.username;
-      updateChain(word, username || 'Player', youScore, oppScore);
+      const state = useGameStore.getState();
+      const username = isYou ? state.you?.username : state.opponent?.username;
+      updateChain(word, username || 'Player', youScore, oppScore, nextTurnId ?? null);
       if (!isYou) addToast(`${username} sent: ${word}`, 'info');
     });
 
-    socket.on('anagram_solved', ({ scrambled, playerScore, lastPlayerId }) => {
+    socket.on('anagram_solved', ({ scrambled, playerScore, lastPlayerId, solvedWord, matchOver }) => {
       const isYou = lastPlayerId === socket.id;
       const youScore = isYou ? playerScore : useGameStore.getState().scores.you;
       const oppScore = !isYou ? playerScore : useGameStore.getState().scores.opponent;
-      const username = isYou ? you?.username : opponent?.username;
-      updateAnagram(scrambled, username || 'Player', youScore, oppScore);
-      addToast(isYou ? 'Correct! +50 pts' : `${username} solved it!`, isYou ? 'success' : 'warn');
+      const state = useGameStore.getState();
+      const username = isYou ? state.you?.username : state.opponent?.username;
+      updateAnagram(matchOver ? null : scrambled, username || 'Player', youScore, oppScore);
+      addToast(isYou ? `Correct! ${solvedWord ? solvedWord + ' ' : ''}+50 pts` : `${username} solved ${solvedWord || 'it'}!`, isYou ? 'success' : 'warn');
+    });
+
+    socket.on('match_over', ({ winnerSocketId, winnerName, secretWord }) => {
+      const result = winnerSocketId === socket.id ? 'you' : winnerSocketId ? 'opponent' : null;
+      finishMatch(result, secretWord);
+      addToast(result === 'you' ? 'You won the match!' : result === 'opponent' ? `${winnerName || 'Opponent'} won the match` : 'Match ended in a draw', result === 'you' ? 'success' : 'warn');
     });
 
     socket.on('guess_error', (err: { message: string }) => {
       addToast(err.message, 'error');
-      if (mode === 'brawl') setShakeRow(guesses.length);
+      const state = useGameStore.getState();
+      if (state.mode === 'brawl') setShakeRow(state.guesses.length);
     });
 
     return () => {
+      socket.off('connect', handleConnect);
+      socket.off('disconnect', handleDisconnect);
       socket.off('guess_result');
       socket.off('opponent_progress');
       socket.off('chain_update');
       socket.off('anagram_solved');
+      socket.off('match_over');
       socket.off('guess_error');
       socket.off('match_start');
     };
-  }, [matchId, token, you?.username, opponent?.username, mode, guesses.length]);
+  }, [matchId, token, setMatchStart, updateAnagram, updateChain, addGuessResult, addOpponentProgress, addToast, setShakeRow, finishMatch]);
 
   // ── Input handler ─────────────────────────────────────────────────────────
   const handleKey = useCallback((key: string) => {
@@ -117,14 +135,14 @@ export default function ArenaPage() {
     } else if (/^[A-Z]$/.test(key) && currentGuess.length < WORD_LENGTH) {
       setCurrentGuess(currentGuess + key);
     }
-  }, [status, currentGuess, guesses.length, matchId, mode]);
+  }, [status, currentGuess, guesses.length, matchId, mode, addToast, setCurrentGuess, setShakeRow]);
 
   const isOver = status === 'won' || status === 'lost';
 
   const renderGame = () => {
     switch (mode) {
-      case 'word_chain': return <WordChainUI matchId={matchId} />;
-      case 'anagrams':   return <AnagramUI matchId={matchId} />;
+      case 'word_chain': return <WordChainUI matchId={matchId} socketId={getSocket()?.id ?? null} disabled={isOver} />;
+      case 'anagrams':   return <AnagramUI matchId={matchId} disabled={isOver} />;
       case 'brawl':
       default:
         return (

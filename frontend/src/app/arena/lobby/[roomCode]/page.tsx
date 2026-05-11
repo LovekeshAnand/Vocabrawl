@@ -21,12 +21,15 @@ export default function ArenaRoomPage() {
   const router = useRouter();
   const roomCode = params.roomCode;
 
-  const { token, user } = useAuthStore();
+  const { token, hydrate } = useAuthStore();
   const { addToast, setMatchStart, roomExpiresAt, setRoomExpiresAt } = useGameStore();
   const [connected, setConnected] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [roomStatus, setRoomStatus] = useState('Waiting for an opponent to join the duel...');
 
   const joinedRef = useRef(false);
+
+  useEffect(() => { hydrate(); }, [hydrate]);
 
   useEffect(() => {
     if (!token || !roomCode) return;
@@ -51,16 +54,25 @@ export default function ArenaRoomPage() {
       handleConnect();
     }
 
-    socket.on('connect', handleReconnect);
-    socket.on('disconnect', () => {
+    const handleDisconnect = () => {
       setConnected(false);
       joinedRef.current = false;
-    });
+    };
+
+    const handlePlayerJoined = ({ message }: { message?: string }) => {
+      const nextMessage = message || 'Player joined the room. Starting the game...';
+      setRoomStatus(nextMessage);
+      addToast(nextMessage, 'success');
+    };
+
+    socket.on('connect', handleReconnect);
+    socket.on('disconnect', handleDisconnect);
+    socket.on('room_player_joined', handlePlayerJoined);
 
     socket.on('match_start', (payload) => {
       setMatchStart(payload);
       setRoomExpiresAt(null);
-      addToast('Battle Starting!', 'success');
+      addToast(`${payload.opponent?.username || 'Opponent'} joined. Starting the game...`, 'success');
       router.push(`/arena/${payload.matchId}`);
     });
 
@@ -80,7 +92,8 @@ export default function ArenaRoomPage() {
 
     return () => {
       socket.off('connect', handleReconnect);
-      socket.off('disconnect');
+      socket.off('disconnect', handleDisconnect);
+      socket.off('room_player_joined', handlePlayerJoined);
       socket.off('match_start');
       socket.off('room_expired');
       socket.off('error_event');
@@ -141,7 +154,9 @@ export default function ArenaRoomPage() {
           </div>
 
           <h1 className="font-hand" style={{ fontSize: '2.2rem', marginBottom: 8 }}>Battle Room</h1>
-          <p style={{ color: 'var(--wb-ink-light)', marginBottom: 32, fontSize: '0.95rem' }}>Waiting for an opponent to join the duel...</p>
+          <p style={{ color: connected ? 'var(--wb-ink-light)' : 'var(--wb-amber)', marginBottom: 32, fontSize: '0.95rem' }}>
+            {connected ? roomStatus : 'Connecting to room...'}
+          </p>
 
           <div style={{ background: 'var(--wb-paper-alt)', padding: '20px 24px', borderRadius: 16, border: '2px solid var(--wb-border)', marginBottom: 32 }}>
             <p style={{ fontSize: '0.75rem', color: 'var(--wb-ink-faint)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Room Code</p>

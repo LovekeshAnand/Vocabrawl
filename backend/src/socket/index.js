@@ -67,27 +67,59 @@ function initSocket(io) {
 
     // ── Helper: Start Match ───────────────────────────────────────────────
     const startMatch = (result) => {
-      const { matchId, p1, p2, mode } = result;
+      const { matchId, p1, p2, mode, ranked } = result;
+      const match = matchService.getMatch(matchId);
       io.sockets.sockets.get(p1.socketId)?.join(matchId);
       io.sockets.sockets.get(p2.socketId)?.join(matchId);
 
       const payload = {
         matchId,
-        mode:       mode || GAME.MODES.BRAWL,
+        mode:       mode || match?.mode || GAME.MODES.BRAWL,
         you:        null, // set per player
         opponent:   null, // set per player
         wordLength: GAME.WORD_LENGTH,
         maxGuesses: GAME.MAX_GUESSES,
+        scrambled:  match?.scrambled,
+        currentWord: match?.currentWord,
+        targetScore: match?.targetScore,
+        endsAt:     match?.endsAt,
+        nextTurnId: match?.turnSocketId,
+        ranked:     Boolean(ranked || match?.ranked),
       };
+
+      if (!payload.ranked) {
+        io.to(p1.socketId).emit('room_player_joined', {
+          username: p2.username,
+          message: `${p2.username} joined the room. Starting the game...`,
+        });
+        io.to(p2.socketId).emit('room_player_joined', {
+          username: p1.username,
+          message: `Joined ${p1.username}'s room. Starting the game...`,
+        });
+      }
 
       io.to(p1.socketId).emit('match_start', { ...payload, you: { username: p1.username, elo: p1.elo }, opponent: { username: p2.username, elo: p2.elo } });
       io.to(p2.socketId).emit('match_start', { ...payload, you: { username: p2.username, elo: p2.elo }, opponent: { username: p1.username, elo: p1.elo } });
+
+      if (match?.endsAt) {
+        setTimeout(() => {
+          const latest = matchService.getMatch(matchId);
+          if (!latest || latest.status !== 'finished' || latest.notifiedOver) return;
+          latest.notifiedOver = true;
+          io.to(matchId).emit('match_over', {
+            winnerSocketId: latest.winnerId || null,
+            winnerName: latest.winnerId ? latest.players[latest.winnerId]?.username : null,
+            mode: latest.mode,
+            secretWord: latest.secretWord,
+          });
+        }, Math.max(0, match.endsAt - Date.now() + 3000));
+      }
     };
 
     // ── Matchmaking ────────────────────────────────────────────────────────
-    socket.on('join_queue', () => {
+    socket.on('join_queue', ({ mode } = {}) => {
       if (!user) return socket.emit('error_event', 'Login required for ranked matches');
-      const result = matchService.joinQueue(socket.id, user);
+      const result = matchService.joinQueue(socket.id, user, mode);
       if (!result) return socket.emit('queue_joined', { position: 'waiting' });
       startMatch(result);
     });
@@ -98,17 +130,17 @@ function initSocket(io) {
     });
 
     // ── Private & Public Rooms ─────────────────────────────────────────────
-    socket.on('create_private_room', ({ mode, visibility }) => {
+    socket.on('create_private_room', ({ mode, visibility } = {}) => {
       if (!user) return socket.emit('error_event', 'Login required to host');
-      const { roomCode, expiresAt } = matchService.createPrivateRoom(socket.id, user, mode, visibility || 'private');
-      socket.emit('private_room_created', { roomCode, visibility: visibility || 'private', expiresAt });
+      const room = matchService.createPrivateRoom(socket.id, user, mode, visibility || 'private');
+      socket.emit('private_room_created', room);
       
       // Notify all clients of updated lobbies
-      if (visibility === 'public') io.emit('lobbies_update', matchService.getPublicRooms());
+      if (room.visibility === 'public') io.emit('lobbies_update', matchService.getPublicRooms());
 
       // Optional: Set a specific timeout here if you want to notify the host
       setTimeout(() => {
-        socket.emit('room_expired', { roomCode });
+        socket.emit('room_expired', { roomCode: room.roomCode });
       }, (GAME.PRIVATE_ROOM_EXPIRE_MS || 300_000) + 1000);
     });
 
@@ -116,7 +148,7 @@ function initSocket(io) {
       socket.emit('lobbies_update', matchService.getPublicRooms());
     });
 
-    socket.on('join_public_room', ({ roomCode }) => {
+    socket.on('join_public_room', ({ roomCode } = {}) => {
       if (!user) return socket.emit('error_event', 'Login required to join');
       const result = matchService.joinPrivateRoom(roomCode, socket.id, user);
       if (result.error) return socket.emit('error_event', result.error);
@@ -130,7 +162,7 @@ function initSocket(io) {
       io.emit('lobbies_update', matchService.getPublicRooms());
     });
 
-    socket.on('join_private_room', ({ roomCode }) => {
+    socket.on('join_private_room', ({ roomCode } = {}) => {
       if (!user) return socket.emit('error_event', 'Login required to join');
       const result = matchService.joinPrivateRoom(roomCode, socket.id, user);
       if (result.error) return socket.emit('error_event', result.error);
@@ -138,10 +170,6 @@ function initSocket(io) {
       if (result.isHost || result.isGuest) {
         return socket.emit('private_room_created', { roomCode, expiresAt: result.room.expires });
       }
-
-      socket.join(result.matchId);
-      const oppId = result.p1.socketId === socket.id ? result.p2.socketId : result.p1.socketId;
-      io.to(oppId).join(result.matchId);
 
       startMatch(result);
     });
@@ -164,8 +192,13 @@ function initSocket(io) {
         mode: match.mode,
         you: { username: you.username, elo: you.elo },
         opponent: { username: opponent.username, elo: opponent.elo },
+        wordLength: GAME.WORD_LENGTH,
+        maxGuesses: GAME.MAX_GUESSES,
         scrambled: match.scrambled,
         currentWord: match.currentWord,
+        targetScore: match.targetScore,
+        endsAt: match.endsAt,
+        nextTurnId: match.turnSocketId,
       });
 
       // Also send current progress if any
@@ -179,7 +212,9 @@ function initSocket(io) {
       if (typeof guess !== 'string') return;
       const g = guess.toUpperCase().trim();
       if (g.length !== GAME.WORD_LENGTH) return socket.emit('guess_error', { code: 'invalid_length', message: 'Word must be 5 letters' });
-      if (!isValidWord(g)) return socket.emit('guess_error', { code: 'not_in_dictionary', message: 'Not in word list' });
+      if (!isValidWord(g, { minLength: GAME.WORD_LENGTH, maxLength: GAME.WORD_LENGTH })) {
+        return socket.emit('guess_error', { code: 'not_in_dictionary', message: 'Not a recognized English word' });
+      }
 
       const res = matchService.processGuess(matchId, socket.id, g);
       if (!res.ok) return socket.emit('guess_error', { code: res.error, message: res.error });
@@ -201,16 +236,30 @@ function initSocket(io) {
     // ── Word Chain ────────────────────────────────────────────────────────
     socket.on('submit_chain_word', ({ matchId, word }) => {
       if (!word) return;
-      if (!isValidWord(word)) return socket.emit('guess_error', { code: 'not_in_dictionary', message: 'Not in word list' });
+      const submittedWord = String(word).trim().toUpperCase();
 
-      const res = matchService.processWordChain(matchId, socket.id, word);
+      const res = matchService.processWordChain(matchId, socket.id, submittedWord);
       if (!res.ok) return socket.emit('guess_error', { code: res.error, message: res.message || res.error });
 
       io.to(matchId).emit('chain_update', {
         word: res.word,
         playerScore: res.playerScore,
         lastPlayerId: socket.id,
+        nextTurnId: res.nextTurnId,
+        targetScore: res.targetScore,
+        matchOver: res.matchOver,
+        winner: res.matchOver ? (res.winner === socket.id ? 'you' : 'opponent') : null,
       });
+
+      if (res.matchOver) {
+        const match = matchService.getMatch(matchId);
+        if (match) match.notifiedOver = true;
+        io.to(matchId).emit('match_over', {
+          winnerSocketId: res.winner,
+          winnerName: user.username,
+          mode: GAME.MODES.WORD_CHAIN,
+        });
+      }
     });
 
     // ── Anagrams ──────────────────────────────────────────────────────────
@@ -224,7 +273,22 @@ function initSocket(io) {
           scrambled: res.scrambled,
           playerScore: res.playerScore,
           lastPlayerId: socket.id,
+          solvedWord: res.solvedWord,
+          targetScore: res.targetScore,
+          matchOver: res.matchOver,
+          winner: res.matchOver ? (res.winner === socket.id ? 'you' : 'opponent') : null,
         });
+
+        if (res.matchOver) {
+          const match = matchService.getMatch(matchId);
+          if (match) match.notifiedOver = true;
+          io.to(matchId).emit('match_over', {
+            winnerSocketId: res.winner,
+            winnerName: user.username,
+            mode: GAME.MODES.ANAGRAMS,
+            secretWord: res.solvedWord,
+          });
+        }
       } else {
         socket.emit('guess_error', { code: 'wrong_anagram', message: 'Not quite!' });
       }
@@ -240,7 +304,9 @@ function initSocket(io) {
       if (typeof guess !== 'string') return;
       const g = guess.toUpperCase().trim();
       if (g.length !== GAME.WORD_LENGTH) return socket.emit('guess_error', { code: 'invalid_length', message: 'Word must be 5 letters' });
-      if (!isValidWord(g)) return socket.emit('guess_error', { code: 'not_in_dictionary', message: 'Not in word list' });
+      if (!isValidWord(g, { minLength: GAME.WORD_LENGTH, maxLength: GAME.WORD_LENGTH })) {
+        return socket.emit('guess_error', { code: 'not_in_dictionary', message: 'Not a recognized English word' });
+      }
 
       const res = matchService.processGauntletGuess(socket.id, g);
       if (!res.ok) return socket.emit('guess_error', { code: res.error, message: res.error });
@@ -339,7 +405,8 @@ function initSocket(io) {
       onlineCount = Math.max(0, onlineCount - 1);
       console.log(`[socket] disconnect ${socket.id} (Online: ${onlineCount})`);
       io.emit('presence_update', { onlineCount });
-      matchService.cleanupPlayer(socket.id);
+      const cleanup = matchService.cleanupPlayer(socket.id);
+      if (cleanup?.roomsChanged) io.emit('lobbies_update', matchService.getPublicRooms());
 
       // Scribbl cleanup
       const lobbyId = scribbl.getSocketLobby(socket.id);
