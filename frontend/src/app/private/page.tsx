@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Navbar } from '../../components/layout/Navbar';
@@ -9,7 +9,7 @@ import { useGameStore } from '../../store/gameStore';
 import { connectSocket } from '../../lib/socket';
 import { ToastContainer } from '../../components/ui/Toast';
 
-export default function PrivateRoomPage() {
+function PrivateRoomContent() {
   const router = useRouter();
   const { user, token, hydrate } = useAuthStore();
   const { setMatchStart, addToast, setRoomExpiresAt } = useGameStore();
@@ -163,5 +163,23 @@ export default function PrivateRoomPage() {
 
       <Footer />
     </div>
+  );
+}
+
+export default function PrivateRoomPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <Navbar />
+        <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div className="wb-card" style={{ padding: 32 }}>
+            <p className="font-hand" style={{ fontSize: '1.5rem' }}>Loading room...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    }>
+      <PrivateRoomContent />
+    </Suspense>
   );
 }
