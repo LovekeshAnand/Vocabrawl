@@ -1,6 +1,7 @@
 'use strict';
 
 const mongoose = require('mongoose');
+const config = require('../config');
 
 let _connected = false;
 
@@ -11,8 +12,10 @@ let _connected = false;
 async function connectDB() {
   if (_connected) return;
 
-  const uri = process.env.MONGODB_URI;
-  if (!uri) throw new Error('MONGODB_URI is not set in .env');
+  const uri = config.MONGODB_URI;
+  if (!uri) throw new Error('MONGODB_URI is not set');
+
+  console.log(`[db] MONGODB_URI loaded: ${uri.startsWith('mongodb+srv://') ? 'mongodb+srv://***' : 'mongodb://***'}`);
 
   mongoose.set('strictQuery', true);
 

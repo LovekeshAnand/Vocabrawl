@@ -1,11 +1,25 @@
 'use strict';
-require('dotenv').config();
+require('dotenv').config({ quiet: true });
+
+function readEnv(name, fallback = '') {
+  const value = process.env[name];
+  if (value === undefined || value === null) return fallback;
+  return String(value).trim();
+}
+
+function validateMongoUri(uri) {
+  if (!uri) return uri;
+  if (!uri.startsWith('mongodb://') && !uri.startsWith('mongodb+srv://')) {
+    throw new Error('MONGODB_URI must start with mongodb:// or mongodb+srv://');
+  }
+  return uri;
+}
 
 module.exports = {
-  PORT:           parseInt(process.env.PORT || '3001', 10),
-  FRONTEND_URL:   process.env.FRONTEND_URL || 'http://localhost:3000',
-  MONGODB_URI:    process.env.MONGODB_URI,
-  JWT_SECRET:     process.env.JWT_SECRET || 'vocabrawl-super-secret-dev-key-change-in-prod',
+  PORT:           parseInt(readEnv('PORT', '3001'), 10),
+  FRONTEND_URL:   readEnv('FRONTEND_URL', 'http://localhost:3000'),
+  MONGODB_URI:    validateMongoUri(readEnv('MONGODB_URI')),
+  JWT_SECRET:     readEnv('JWT_SECRET', 'vocabrawl-super-secret-dev-key-change-in-prod'),
   JWT_EXPIRES_IN: '7d',
 
   GAME: {
