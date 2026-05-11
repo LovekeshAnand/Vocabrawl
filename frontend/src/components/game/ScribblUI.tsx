@@ -13,7 +13,7 @@ export function ScribblUI() {
   const { user } = useAuthStore();
   const { 
     lobbyId, status, players, isDrawer, hint, round, totalRounds, 
-    chat, timeLeft, secretWord, drawer 
+    chat, timeLeft, secretWord, drawer, addChatMessage 
   } = useScribblStore();
   const [chatInput, setChatInput] = useState('');
   const chatRef = useRef<HTMLDivElement>(null);
