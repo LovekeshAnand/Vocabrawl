@@ -22,10 +22,6 @@ function describeMongoUri(uri) {
   }
 }
 
-/**
- * Connect to MongoDB once and reuse the connection.
- * Uses mongoose's built-in connection pooling.
- */
 async function connectDB() {
   if (_connected) return;
 
@@ -40,26 +36,36 @@ async function connectDB() {
 
   mongoose.set('strictQuery', true);
 
-  await mongoose.connect(uri, {
-    // HPC: keep connection pool sized for expected concurrency
-    maxPoolSize:     20,
-    minPoolSize:     2,
-    socketTimeoutMS: 10_000,
-    serverSelectionTimeoutMS: 8_000,
-    // authSource:      uri.includes('authSource=') ? undefined : 'admin',
-  });
+  try {
+    await mongoose.connect(uri, {
+      maxPoolSize:     20,
+      minPoolSize:     2,
+      socketTimeoutMS: 10_000,
+      serverSelectionTimeoutMS: 8_000,
+      // REMOVED authSource override - let it use what's in the URI
+    });
 
-  _connected = true;
-  console.log('✅ MongoDB connected');
-
-  mongoose.connection.on('disconnected', () => {
-    console.warn('⚠️  MongoDB disconnected — will auto-reconnect');
-    _connected = false;
-  });
-  mongoose.connection.on('reconnected', () => {
-    console.log('✅ MongoDB reconnected');
     _connected = true;
-  });
+    console.log('✅ MongoDB connected successfully');
+
+    mongoose.connection.on('disconnected', () => {
+      console.warn('⚠️  MongoDB disconnected — will auto-reconnect');
+      _connected = false;
+    });
+    mongoose.connection.on('reconnected', () => {
+      console.log('✅ MongoDB reconnected');
+      _connected = true;
+    });
+    
+  } catch (error) {
+    console.error('❌ MongoDB connection error details:', {
+      message: error.message,
+      code: error.code,
+      codeName: error.codeName,
+      name: error.name
+    });
+    throw error;
+  }
 }
 
 function getConnection() {
