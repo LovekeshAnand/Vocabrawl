@@ -46,7 +46,7 @@ async function connectDB() {
     minPoolSize:     2,
     socketTimeoutMS: 10_000,
     serverSelectionTimeoutMS: 8_000,
-    authSource:      uri.includes('authSource=') ? undefined : 'admin',
+    // authSource:      uri.includes('authSource=') ? undefined : 'admin',
   });
 
   _connected = true;
