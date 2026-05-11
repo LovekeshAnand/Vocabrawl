@@ -2,118 +2,122 @@
 
 const bcrypt  = require('bcryptjs');
 const jwt     = require('jsonwebtoken');
-const User    = require('../db/models/User');
+const { query } = require('../db/connection');
 const { JWT_SECRET, JWT_EXPIRES_IN, GAME } = require('../config');
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function _signToken(user) {
-  const payload = { sub: user._id.toString(), username: user.username };
-  const token   = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-  return { token, user: user.toJSON() };
+function _toPublicUser(row) {
+  return {
+    id: row.id,
+    username: row.username,
+    elo: row.elo,
+    gamesPlayed: row.games_played ?? 0,
+    gamesWon: row.games_won ?? 0,
+  };
 }
 
-// ── Public API ────────────────────────────────────────────────────────────────
+function _signToken(user) {
+  const payload = { sub: String(user.id), username: user.username };
+  const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  return { token, user: user.isGuest ? user : _toPublicUser(user) };
+}
 
-/**
- * Register a new user.
- * Hashes password, persists to MongoDB, returns { token, user }.
- */
 async function register(username, password) {
   if (!username || username.length < 3 || username.length > 20)
-    throw new Error('Username must be 3–20 characters');
+    throw new Error('Username must be 3-20 characters');
   if (!password || password.length < 6)
     throw new Error('Password must be at least 6 characters');
 
-  const exists = await User.findOne({ username: new RegExp(`^${username}$`, 'i') }).lean();
-  if (exists) throw new Error('Username already taken');
+  const exists = await query('select id from users where lower(username) = lower($1) limit 1', [username]);
+  if (exists.rowCount) throw new Error('Username already taken');
 
   const passwordHash = await bcrypt.hash(password, 10);
-  const user = await User.create({ username, passwordHash, elo: GAME.ELO.DEFAULT_RATING });
-  return _signToken(user);
+  const result = await query(
+    `insert into users (username, password_hash, elo)
+     values ($1, $2, $3)
+     returning id, username, elo, games_played, games_won`,
+    [username, passwordHash, GAME.ELO.DEFAULT_RATING]
+  );
+
+  return _signToken(result.rows[0]);
 }
 
-/**
- * Login with username + password.
- * Returns { token, user } on success.
- */
 async function login(username, password) {
-  const user = await User.findOne({ username: new RegExp(`^${username}$`, 'i') });
+  const result = await query(
+    `select id, username, password_hash, elo, games_played, games_won
+     from users
+     where lower(username) = lower($1)
+     limit 1`,
+    [username]
+  );
+  const user = result.rows[0];
   if (!user) throw new Error('Invalid credentials');
 
-  const ok = await bcrypt.compare(password, user.passwordHash);
+  const ok = await bcrypt.compare(password, user.password_hash);
   if (!ok) throw new Error('Invalid credentials');
 
   return _signToken(user);
 }
 
-/**
- * Guest Login - Creates a session-based token without DB storage.
- * Returns { token, user: { username, isGuest: true, ... } }.
- */
 async function guestLogin(username) {
   if (!username || username.length < 3 || username.length > 20)
-    throw new Error('Username must be 3–20 characters');
+    throw new Error('Username must be 3-20 characters');
 
-  // We use a unique guest ID and a specific sub prefix
   const guestId = `guest_${Math.random().toString(36).substr(2, 9)}`;
   const user = {
     id: guestId,
-    _id: guestId, // for internal consistency
     username: `${username}#Guest`,
     elo: GAME.ELO.DEFAULT_RATING,
     isGuest: true,
-    toJSON: () => ({ id: guestId, username: `${username}#Guest`, elo: GAME.ELO.DEFAULT_RATING, isGuest: true })
   };
 
   return _signToken(user);
 }
 
-/**
- * Verify a JWT and return the payload.
- */
 function verifyToken(token) {
-  return jwt.verify(token, JWT_SECRET); // throws on invalid/expired
+  return jwt.verify(token, JWT_SECRET);
 }
 
-/**
- * Fetch a user by their MongoDB ObjectId (from JWT sub field).
- */
 async function getUserById(id) {
-  const user = await User.findById(id).lean();
-  if (!user) return null;
-  // Strip passwordHash from lean object
-  const { passwordHash: _pw, ...safe } = user;
-  return { ...safe, id: user._id.toString() };
+  if (!id || String(id).startsWith('guest_')) return null;
+  const result = await query(
+    `select id, username, elo, games_played, games_won
+     from users
+     where id = $1
+     limit 1`,
+    [id]
+  );
+  return result.rows[0] ? _toPublicUser(result.rows[0]) : null;
 }
 
-/**
- * Atomically update ELO and game stats after a match.
- */
 async function updateElo(userId, newElo, won) {
-  await User.findByIdAndUpdate(userId, {
-    $set: { elo: newElo },
-    $inc: { gamesPlayed: 1, ...(won ? { gamesWon: 1 } : {}) },
-  });
+  if (!userId || String(userId).startsWith('guest_')) return;
+  await query(
+    `update users
+     set elo = $2,
+         games_played = games_played + 1,
+         games_won = games_won + $3,
+         updated_at = now()
+     where id = $1`,
+    [userId, newElo, won ? 1 : 0]
+  );
 }
 
-/**
- * Top-N users by ELO for the leaderboard.
- * Uses the { elo: -1 } index for O(log n + limit) query.
- */
 async function getLeaderboard(limit = 20) {
-  const users = await User.find()
-    .sort({ elo: -1, createdAt: 1 })
-    .limit(limit)
-    .lean();
+  const result = await query(
+    `select id, username, elo, games_played, games_won
+     from users
+     order by elo desc, created_at asc
+     limit $1`,
+    [limit]
+  );
 
-  return users.map((u, i) => ({
-    rank:        i + 1,
-    id:          u._id.toString(),
-    username:    u.username,
-    elo:         u.elo,
-    gamesPlayed: u.gamesPlayed,
-    gamesWon:    u.gamesWon,
+  return result.rows.map((u, i) => ({
+    rank: i + 1,
+    id: u.id,
+    username: u.username,
+    elo: u.elo,
+    gamesPlayed: u.games_played,
+    gamesWon: u.games_won,
   }));
 }
 

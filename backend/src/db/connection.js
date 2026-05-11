@@ -1,75 +1,88 @@
 'use strict';
 
-const mongoose = require('mongoose');
+const { Pool } = require('pg');
 const config = require('../config');
 
-let _connected = false;
+let _pool = null;
+let _ready = false;
 
-function describeMongoUri(uri) {
-  try {
-    const parsed = new URL(uri);
-    const dbName = parsed.pathname.replace(/^\//, '') || '(none)';
-    const authSource = parsed.searchParams.get('authSource') || '(default)';
-    return {
-      host: parsed.host,
-      username: decodeURIComponent(parsed.username || ''),
-      passwordLength: decodeURIComponent(parsed.password || '').length,
-      dbName,
-      authSource,
-    };
-  } catch {
-    return null;
+function getPool() {
+  if (!_pool) {
+    if (!config.DATABASE_URL) throw new Error('DATABASE_URL is not set');
+    _pool = new Pool({
+      connectionString: config.DATABASE_URL,
+      ssl: config.DB_SSL ? { rejectUnauthorized: false } : undefined,
+      max: 10,
+      idleTimeoutMillis: 30_000,
+      connectionTimeoutMillis: 10_000,
+    });
   }
+  return _pool;
 }
 
 async function connectDB() {
-  if (_connected) return;
+  if (_ready) return;
 
-  const uri = config.MONGODB_URI;
-  if (!uri) throw new Error('MONGODB_URI is not set');
-
-  const uriInfo = describeMongoUri(uri);
-  console.log(`[db] MONGODB_URI loaded: ${uri.startsWith('mongodb+srv://') ? 'mongodb+srv://***' : 'mongodb://***'}`);
-  if (uriInfo) {
-    console.log(`[db] Mongo target host=${uriInfo.host} db=${uriInfo.dbName} user=${uriInfo.username} passwordLength=${uriInfo.passwordLength} authSource=${uriInfo.authSource}`);
-  }
-
-  mongoose.set('strictQuery', true);
-
+  const pool = getPool();
+  const client = await pool.connect();
   try {
-    await mongoose.connect(uri, {
-      maxPoolSize:     20,
-      minPoolSize:     2,
-      socketTimeoutMS: 10_000,
-      serverSelectionTimeoutMS: 8_000,
-      // REMOVED authSource override - let it use what's in the URI
-    });
-
-    _connected = true;
-    console.log('✅ MongoDB connected successfully');
-
-    mongoose.connection.on('disconnected', () => {
-      console.warn('⚠️  MongoDB disconnected — will auto-reconnect');
-      _connected = false;
-    });
-    mongoose.connection.on('reconnected', () => {
-      console.log('✅ MongoDB reconnected');
-      _connected = true;
-    });
-    
-  } catch (error) {
-    console.error('❌ MongoDB connection error details:', {
-      message: error.message,
-      code: error.code,
-      codeName: error.codeName,
-      name: error.name
-    });
-    throw error;
+    await client.query('select 1');
+    await ensureSchema(client);
+    _ready = true;
+    console.log('PostgreSQL connected');
+  } finally {
+    client.release();
   }
+}
+
+async function ensureSchema(client = getPool()) {
+  await client.query(`
+    create table if not exists users (
+      id uuid primary key default gen_random_uuid(),
+      username text not null unique,
+      password_hash text not null,
+      elo integer not null default 1000,
+      games_played integer not null default 0,
+      games_won integer not null default 0,
+      created_at timestamptz not null default now(),
+      updated_at timestamptz not null default now()
+    );
+
+    create index if not exists users_elo_created_idx on users (elo desc, created_at asc);
+
+    create table if not exists matches (
+      id bigserial primary key,
+      match_id text not null unique,
+      status text not null default 'finished',
+      secret_word text not null,
+      winner_id text,
+      elo_changes jsonb not null default '[]'::jsonb,
+      started_at timestamptz not null,
+      finished_at timestamptz not null default now(),
+      created_at timestamptz not null default now()
+    );
+
+    create table if not exists match_players (
+      id bigserial primary key,
+      match_id text not null references matches(match_id) on delete cascade,
+      user_id text,
+      username text,
+      elo_at_start integer,
+      guesses integer,
+      solved boolean,
+      solve_time_ms integer
+    );
+
+    create index if not exists match_players_user_started_idx on match_players (user_id, match_id);
+  `);
+}
+
+function query(text, params) {
+  return getPool().query(text, params);
 }
 
 function getConnection() {
-  return mongoose.connection;
+  return getPool();
 }
 
-module.exports = { connectDB, getConnection };
+module.exports = { connectDB, getConnection, query };

@@ -7,18 +7,11 @@ function readEnv(name, fallback = '') {
   return String(value).trim();
 }
 
-function validateMongoUri(uri) {
-  if (!uri) return uri;
-  if (!uri.startsWith('mongodb://') && !uri.startsWith('mongodb+srv://')) {
-    throw new Error('MONGODB_URI must start with mongodb:// or mongodb+srv://');
-  }
-  return uri;
-}
-
 module.exports = {
   PORT:           parseInt(readEnv('PORT', '3001'), 10),
   FRONTEND_URL:   readEnv('FRONTEND_URL', 'http://localhost:3000'),
-  MONGODB_URI:    validateMongoUri(readEnv('MONGODB_URI')),
+  DATABASE_URL:   readEnv('DATABASE_URL') || readEnv('POSTGRES_URL') || readEnv('SUPABASE_DB_URL'),
+  DB_SSL:         readEnv('DB_SSL', 'true') !== 'false',
   JWT_SECRET:     readEnv('JWT_SECRET', 'vocabrawl-super-secret-dev-key-change-in-prod'),
   JWT_EXPIRES_IN: '7d',
 

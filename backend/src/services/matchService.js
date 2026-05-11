@@ -3,7 +3,7 @@
 const { getRandomWord, isValidWord }           = require('../data/words');
 const { evaluateGuess, serialiseAndRelease, isWin, calculateElo, generateAnagram, validateChain } = require('./gameEngine');
 const { updateElo }                            = require('./authService');
-const Match                                    = require('../db/models/Match');
+const { getConnection, query }                 = require('../db/connection');
 const { GAME }                                 = require('../config');
 
 /**
@@ -11,7 +11,7 @@ const { GAME }                                 = require('../config');
  *
  * Architecture:
  *  - Active matches live in a Map<matchId, MatchState> (in-memory, nanosecond access).
- *  - On completion the match is persisted to MongoDB asynchronously (fire-and-forget
+ *  - On completion the match is persisted to PostgreSQL asynchronously (fire-and-forget
  *    with error logging) — never blocking the real-time response path.
  *  - Matchmaking queue is a plain array; swap to a min-heap sorted by ELO for ranked.
  *
@@ -23,7 +23,7 @@ const { GAME }                                 = require('../config');
  */
 
 const _matches      = new Map();   // matchId → MatchState
-const _queue        = [];          // [{socketId, userId, username, elo, mongoId}]
+const _queue        = [];          // [{socketId, userId, username, elo, dbId}]
 const _privateRooms = new Map();   // roomCode → { host, guest, mode, expires, visibility }
 
 const VALID_ROOM_VISIBILITY = new Set(['private', 'public']);
@@ -34,7 +34,7 @@ function _playerFromUser(socketId, user) {
   return {
     socketId,
     userId:   String(user.id ?? user._id),
-    mongoId:  user._id ?? user.mongoId ?? user.id,
+    dbId:     user.id ?? user._id ?? user.mongoId,
     username: user.username || 'Player',
     elo:      Number(user.elo ?? GAME.ELO.DEFAULT_RATING),
   };
@@ -486,31 +486,30 @@ async function _finishMatch(matchId, winnerId) {
     if (winner && loser) {
       const { winnerNew, loserNew } = calculateElo(winner.elo, loser.elo);
       eloChanges.push(
-        { userId: winner.mongoId, delta: winnerNew - winner.elo, newElo: winnerNew },
-        { userId: loser.mongoId,  delta: loserNew  - loser.elo,  newElo: loserNew  },
+        { userId: winner.dbId, delta: winnerNew - winner.elo, newElo: winnerNew },
+        { userId: loser.dbId,  delta: loserNew  - loser.elo,  newElo: loserNew  },
       );
       // Async — don't await, don't block socket path
-      updateElo(winner.mongoId, winnerNew, true).catch(e => console.error('[elo]', e));
-      updateElo(loser.mongoId,  loserNew,  false).catch(e => console.error('[elo]', e));
+      updateElo(winner.dbId, winnerNew, true).catch(e => console.error('[elo]', e));
+      updateElo(loser.dbId,  loserNew,  false).catch(e => console.error('[elo]', e));
     }
   }
 
-  // Persist match to MongoDB (fire-and-forget)
-  Match.create({
+  // Persist match to PostgreSQL (fire-and-forget)
+  persistMatch({
     matchId,
-    status:     'finished',
     secretWord: match.secretWord || 'CHAIN',
     players:    playerList.map(p => ({
-      userId:      p.mongoId,
+      userId:      String(p.dbId ?? p.userId),
       username:    p.username,
       eloAtStart:  p.elo,
       guesses:     p.guesses,
       solved:      p.solved,
       solveTimeMs: p.solveTimeNs > 0n ? Number(p.solveTimeNs / 1_000_000n) : 0,
     })),
-    winnerId:   winnerId ? match.players[winnerId]?.mongoId : null,
+    winnerId:   winnerId ? String(match.players[winnerId]?.dbId ?? match.players[winnerId]?.userId) : null,
     eloChanges,
-    startedAt:  match.startTime,
+    startedAt:  new Date(match.startTime),
     finishedAt: new Date(),
   }).catch(e => console.error('[match persist]', e));
 
@@ -521,6 +520,34 @@ async function _finishMatch(matchId, winnerId) {
 // ── Gauntlet (solo PvE) ───────────────────────────────────────────────────────
 
 const _gauntletSessions = new Map();
+
+async function persistMatch(data) {
+  const client = await getConnection().connect();
+  try {
+    await client.query('begin');
+    await client.query(
+      `insert into matches (match_id, status, secret_word, winner_id, elo_changes, started_at, finished_at)
+       values ($1, 'finished', $2, $3, $4::jsonb, $5, $6)
+       on conflict (match_id) do nothing`,
+      [data.matchId, data.secretWord, data.winnerId, JSON.stringify(data.eloChanges), data.startedAt, data.finishedAt]
+    );
+
+    for (const player of data.players) {
+      await client.query(
+        `insert into match_players (match_id, user_id, username, elo_at_start, guesses, solved, solve_time_ms)
+         values ($1, $2, $3, $4, $5, $6, $7)`,
+        [data.matchId, player.userId, player.username, player.eloAtStart, player.guesses, player.solved, player.solveTimeMs]
+      );
+    }
+
+    await client.query('commit');
+  } catch (err) {
+    await client.query('rollback').catch(() => {});
+    throw err;
+  } finally {
+    client.release();
+  }
+}
 
 function startGauntlet(socketId, userId) {
   const session = {

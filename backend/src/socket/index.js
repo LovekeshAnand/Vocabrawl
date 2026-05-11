@@ -12,8 +12,8 @@ const scribbl              = require('../services/scribblService');
  *
  * Auth flow:
  *  1. JWT verified in middleware (once per connection).
- *  2. User document fetched from MongoDB and attached to socket.data.user.
- *     This ensures we have the current ELO and the MongoDB _id for ELO updates.
+ *  2. User row fetched from PostgreSQL and attached to socket.data.user.
+ *     This ensures we have the current ELO and database id for ELO updates.
  *  3. Guest sockets (no token) are allowed with socket.data.user = null.
  *     Guests can play Gauntlet but not ranked.
  *
@@ -38,7 +38,7 @@ function initSocket(io) {
         // Guest user — skip DB lookup
         socket.data.user = { id: payload.sub, username: payload.username, elo: 1000, isGuest: true };
       } else {
-        // Registered user — fetch fresh from MongoDB so ELO is current
+        // Registered user — fetch fresh from PostgreSQL so ELO is current
         const user = await authService.getUserById(payload.sub);
         socket.data.user = user ?? null;
       }
