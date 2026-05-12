@@ -2,8 +2,23 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'VocaBrawl — The Arena of Letters',
-  description: 'Real-time competitive word-solving PvP. Outsmart opponents letter by letter.',
+  title: 'VocaBrawl | Multiplayer Word Games & Sketch Battles',
+  description: 'The ultimate arena for word warriors. Play SketchBrawl, VocaWord, and Word Chain in real-time PvP match-ups. Climb the leaderboard and outsmart your opponents!',
+  icons: {
+    icon: '/favicon.png',
+  },
+  openGraph: {
+    title: 'VocaBrawl | Multiplayer Word Games & Sketch Battles',
+    description: 'Join the arena in VocaBrawl! Compete in SketchBrawl, VocaWord, and Word Chain. Battle friends or strangers in the most addictive word game platform.',
+    url: 'https://vocabrawl.com',
+    siteName: 'VocaBrawl',
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    title: 'VocaBrawl | Multiplayer Word Games & Sketch Battles',
+    description: 'The ultimate arena for word warriors. Play SketchBrawl, VocaWord, and Word Chain in real-time PvP.',
+  }
 };
 
 import { CookieConsent } from '../components/ui/CookieConsent';
