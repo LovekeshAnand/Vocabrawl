@@ -475,3 +475,19 @@ body {
 ::-webkit-scrollbar-track { background: var(--wb-paper); }
 ::-webkit-scrollbar-thumb { background: var(--wb-ink); border-radius: 4px; }
 
+
+
+[data-theme='dark'] .wb-btn-blue, 
+[data-theme='dark'] .wb-btn-indigo, 
+[data-theme='dark'] .wb-btn-green, 
+[data-theme='dark'] .wb-btn-amber,
+[data-theme='dark'] .wb-btn-primary,
+[data-theme='dark'] .wb-tile.correct,
+[data-theme='dark'] .wb-tile.present,
+[data-theme='dark'] .wb-tile.absent,
+[data-theme='dark'] .wb-key.correct,
+[data-theme='dark'] .wb-key.present,
+[data-theme='dark'] .wb-key.absent { 
+  color: #000000 !important; 
+}
+
