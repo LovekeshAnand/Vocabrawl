@@ -1,5 +1,5 @@
 'use client';
-
+import { Analytics } from "@vercel/analytics/next"
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -56,6 +56,7 @@ export default function HomePage() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--wb-paper)' }}>
+      <Analytics/>
       <Navbar />
       <ToastContainer />
 
