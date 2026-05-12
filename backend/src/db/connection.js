@@ -12,6 +12,9 @@ function getPool() {
     _pool = new Pool({
       connectionString: config.DATABASE_URL,
       ssl: config.DB_SSL ? { rejectUnauthorized: false } : undefined,
+      // Render environments can fail on IPv6-only DNS resolution.
+      // Force IPv4 for outbound PostgreSQL connections.
+      family: 4,
       max: 10,
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 10_000,
