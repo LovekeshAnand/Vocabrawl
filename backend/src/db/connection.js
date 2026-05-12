@@ -1,5 +1,11 @@
 'use strict';
 
+const dns = require('dns');
+
+// Force Node.js to prefer IPv4 over IPv6
+// Fixes Render + Supabase ENETUNREACH issues
+dns.setDefaultResultOrder('ipv4first');
+
 const { Pool } = require('pg');
 const config = require('../config');
 
@@ -8,84 +14,129 @@ let _ready = false;
 
 function getPool() {
   if (!_pool) {
-    if (!config.DATABASE_URL) throw new Error('DATABASE_URL is not set');
+    if (!config.DATABASE_URL) {
+      throw new Error('DATABASE_URL is not set');
+    }
+
     _pool = new Pool({
       connectionString: config.DATABASE_URL,
-      ssl: config.DB_SSL ? { rejectUnauthorized: false } : undefined,
-      // Render environments can fail on IPv6-only DNS resolution.
-      // Force IPv4 for outbound PostgreSQL connections.
+
+      // Required for Render + Supabase
+      ssl: config.DB_SSL
+        ? {
+            rejectUnauthorized: false,
+          }
+        : false,
+
+      // Force IPv4
       family: 4,
+
+      // Pool settings
       max: 10,
-      idleTimeoutMillis: 30_000,
-      connectionTimeoutMillis: 10_000,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
+    });
+
+    _pool.on('error', (err) => {
+      console.error('Unexpected PostgreSQL pool error:', err);
     });
   }
+
   return _pool;
 }
 
 async function connectDB() {
   if (_ready) return;
 
-  const pool = getPool();
-  const client = await pool.connect();
   try {
-    await client.query('select 1');
-    await ensureSchema(client);
-    _ready = true;
-    console.log('PostgreSQL connected');
-  } finally {
-    client.release();
+    const pool = getPool();
+
+    console.log('Connecting to PostgreSQL...');
+
+    const client = await pool.connect();
+
+    try {
+      await client.query('SELECT 1');
+
+      await ensureSchema(client);
+
+      _ready = true;
+
+      console.log('✅ PostgreSQL connected successfully');
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error('❌ Failed to connect to PostgreSQL:', err.message);
+    process.exit(1);
   }
 }
 
 async function ensureSchema(client = getPool()) {
   await client.query(`
-    create table if not exists users (
-      id uuid primary key default gen_random_uuid(),
-      username text not null unique,
-      password_hash text not null,
-      elo integer not null default 1000,
-      games_played integer not null default 0,
-      games_won integer not null default 0,
-      created_at timestamptz not null default now(),
-      updated_at timestamptz not null default now()
+    CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+    CREATE TABLE IF NOT EXISTS users (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      username TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      elo INTEGER NOT NULL DEFAULT 1000,
+      games_played INTEGER NOT NULL DEFAULT 0,
+      games_won INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
-    create index if not exists users_elo_created_idx on users (elo desc, created_at asc);
+    CREATE INDEX IF NOT EXISTS users_elo_created_idx
+    ON users (elo DESC, created_at ASC);
 
-    create table if not exists matches (
-      id bigserial primary key,
-      match_id text not null unique,
-      status text not null default 'finished',
-      secret_word text not null,
-      winner_id text,
-      elo_changes jsonb not null default '[]'::jsonb,
-      started_at timestamptz not null,
-      finished_at timestamptz not null default now(),
-      created_at timestamptz not null default now()
+    CREATE TABLE IF NOT EXISTS matches (
+      id BIGSERIAL PRIMARY KEY,
+      match_id TEXT NOT NULL UNIQUE,
+      status TEXT NOT NULL DEFAULT 'finished',
+      secret_word TEXT NOT NULL,
+      winner_id TEXT,
+      elo_changes JSONB NOT NULL DEFAULT '[]'::jsonb,
+      started_at TIMESTAMPTZ NOT NULL,
+      finished_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
-    create table if not exists match_players (
-      id bigserial primary key,
-      match_id text not null references matches(match_id) on delete cascade,
-      user_id text,
-      username text,
-      elo_at_start integer,
-      guesses integer,
-      solved boolean,
-      solve_time_ms integer
+    CREATE TABLE IF NOT EXISTS match_players (
+      id BIGSERIAL PRIMARY KEY,
+      match_id TEXT NOT NULL REFERENCES matches(match_id) ON DELETE CASCADE,
+      user_id TEXT,
+      username TEXT,
+      elo_at_start INTEGER,
+      guesses INTEGER,
+      solved BOOLEAN,
+      solve_time_ms INTEGER
     );
 
-    create index if not exists match_players_user_started_idx on match_players (user_id, match_id);
+    CREATE INDEX IF NOT EXISTS match_players_user_started_idx
+    ON match_players (user_id, match_id);
   `);
 }
 
-function query(text, params) {
-  return getPool().query(text, params);
+async function query(text, params) {
+  const pool = getPool();
+  return pool.query(text, params);
 }
 
 function getConnection() {
   return getPool();
 }
 
-module.exports = { connectDB, getConnection, query };
+async function closeDB() {
+  if (_pool) {
+    await _pool.end();
+    console.log('PostgreSQL pool closed');
+  }
+}
+
+module.exports = {
+  connectDB,
+  getConnection,
+  query,
+  closeDB,
+};
