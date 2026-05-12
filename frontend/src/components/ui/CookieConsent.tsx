@@ -24,13 +24,13 @@ export function CookieConsent() {
             pointerEvents: 'none', // Critical: Container doesn't block clicks
           }}
         >
-          <GlassCard intensity="high" style={{ padding: 24, boxShadow: '0 20px 50px rgba(0,0,0,0.3)', pointerEvents: 'auto' }}>
+          <GlassCard intensity="high" className="wb-cookie-content" style={{ boxShadow: '0 20px 50px rgba(0,0,0,0.3)', pointerEvents: 'auto' }}>
             <h4 className="font-hand" style={{ fontSize: '1.5rem', marginBottom: 8 }}>Cookie Time! 🍪</h4>
             <p style={{ fontSize: '0.9rem', color: 'var(--wb-ink-light)', lineHeight: 1.5, marginBottom: 20 }}>
               We use cookies to keep you logged in across sessions and maintain your game state. 
               By accepting, you allow us to store your token in your browser.
             </p>
-            <div style={{ display: 'flex', gap: 12 }}>
+            <div className="wb-cookie-actions">
               <button 
                 className="wb-btn wb-btn-primary" 
                 style={{ flex: 1, padding: '10px 20px' }}
