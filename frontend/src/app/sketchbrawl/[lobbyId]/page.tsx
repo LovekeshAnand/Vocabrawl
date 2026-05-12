@@ -4,20 +4,20 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Navbar } from '../../../components/layout/Navbar';
 import { ToastContainer } from '../../../components/ui/Toast';
-import { useScribblStore } from '../../../store/scribblStore';
+import { useSketchBrawlStore } from '../../../store/sketchBrawlStore';
 import { useAuthStore } from '../../../store/authStore';
 import { useGameStore } from '../../../store/gameStore';
 import { connectSocket } from '../../../lib/socket';
-import { ScribblUI } from '../../../components/game/ScribblUI';
+import { SketchBrawlUI } from '../../../components/game/SketchBrawlUI';
 
-export default function ScribblPage() {
+export default function SketchBrawlPage() {
   const params = useParams<{ lobbyId: string }>();
   const router = useRouter();
   const lobbyId = params.lobbyId;
 
   const { token, hydrate } = useAuthStore();
   const { addToast } = useGameStore();
-  const store = useScribblStore();
+  const store = useSketchBrawlStore();
   const [connected, setConnected] = useState(false);
 
   const [hydrated, setHydrated] = useState(false);
@@ -90,7 +90,7 @@ export default function ScribblPage() {
     let timerInterval: NodeJS.Timeout;
     if (store.status === 'playing') {
       timerInterval = setInterval(() => {
-        store.updateTimeLeft(Math.max(0, useScribblStore.getState().timeLeft - 1000));
+        store.updateTimeLeft(Math.max(0, useSketchBrawlStore.getState().timeLeft - 1000));
       }, 1000);
     }
 
@@ -121,7 +121,7 @@ export default function ScribblPage() {
       )}
 
       <main style={{ flex: 1, padding: '24px 16px', width: '100%' }}>
-        <ScribblUI />
+        <SketchBrawlUI />
       </main>
     </div>
   );

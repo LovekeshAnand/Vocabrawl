@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * ScribblService — Manages multi-player draw-and-guess lobbies.
+ * SketchBrawlService — Manages multi-player draw-and-guess lobbies.
  *
  * Architecture:
  *  - Lobbies are stored in-memory (Map). Capacity up to 8 players.
@@ -29,7 +29,7 @@ const HINTS_AT_SECONDS  = [60, 40]; // reveal a letter hint at these seconds rem
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function _generateLobbyId() {
-  return `scribbl_${Date.now().toString(36)}_${(Math.random() * 0xffff | 0).toString(36)}`;
+  return `sketchbrawl_${Date.now().toString(36)}_${(Math.random() * 0xffff | 0).toString(36)}`;
 }
 
 function _makePlayer(socketId, userId, username, isHost = false) {
@@ -360,3 +360,4 @@ module.exports = {
   getLobby,
   getSocketLobby,
 };
+

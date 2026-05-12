@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useSketchBrawlStore } from '../../store/sketchbrawlStore';
+import { useSketchBrawlStore } from '../../store/sketchBrawlStore';
 import { useAuthStore } from '../../store/authStore';
 import { getSocket } from '../../lib/socket';
 import { Canvas } from './Canvas';

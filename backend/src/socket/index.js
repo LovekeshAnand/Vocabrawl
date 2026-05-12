@@ -5,7 +5,7 @@ const { JWT_SECRET, GAME } = require('../config');
 const { isValidWord }      = require('../data/words');
 const matchService         = require('../services/matchService');
 const authService          = require('../services/authService');
-const scribbl              = require('../services/scribblService');
+const sketchbrawl              = require('../services/sketchBrawlService');
 
 /**
  * Initialises all Socket.io middleware and event handlers.
@@ -315,88 +315,88 @@ function initSocket(io) {
 
     socket.on('gauntlet_end', () => matchService.endGauntlet(socket.id));
 
-    // ── Scribbl: Lobby Management ──────────────────────────────────────────
-    socket.on('scribbl_create_lobby', ({ rounds, maxPlayers, visibility }) => {
+    // ── SketchBrawl: Lobby Management ──────────────────────────────────────────
+    socket.on('sketchbrawl_create_lobby', ({ rounds, maxPlayers, visibility }) => {
       if (!user) return socket.emit('error_event', 'Login required');
-      const { lobbyId, lobby } = scribbl.createLobby(socket.id, user.id, user.username, { rounds, maxPlayers, visibility });
+      const { lobbyId, lobby } = sketchbrawl.createLobby(socket.id, user.id, user.username, { rounds, maxPlayers, visibility });
       socket.join(lobbyId);
-      socket.emit('scribbl_lobby_joined', { lobbyId, lobby, isHost: true });
-      if (visibility === 'public') io.emit('scribbl_lobbies_update', scribbl.getPublicLobbies());
+      socket.emit('sketchbrawl_lobby_joined', { lobbyId, lobby, isHost: true });
+      if (visibility === 'public') io.emit('sketchbrawl_lobbies_update', sketchbrawl.getPublicLobbies());
     });
 
-    socket.on('scribbl_join_lobby', ({ lobbyId }) => {
+    socket.on('sketchbrawl_join_lobby', ({ lobbyId }) => {
       if (!user) return socket.emit('error_event', 'Login required');
-      const res = scribbl.joinLobby(lobbyId, socket.id, user.id, user.username);
+      const res = sketchbrawl.joinLobby(lobbyId, socket.id, user.id, user.username);
       if (res.error) return socket.emit('error_event', res.error);
       socket.join(lobbyId);
       const isHost = res.lobby.players.find(p => p.socketId === socket.id)?.isHost || false;
-      socket.emit('scribbl_lobby_joined', { lobbyId, lobby: res.lobby, isHost });
-      socket.to(lobbyId).emit('scribbl_player_joined', { lobby: res.lobby, username: user.username });
-      io.emit('scribbl_lobbies_update', scribbl.getPublicLobbies());
+      socket.emit('sketchbrawl_lobby_joined', { lobbyId, lobby: res.lobby, isHost });
+      socket.to(lobbyId).emit('sketchbrawl_player_joined', { lobby: res.lobby, username: user.username });
+      io.emit('sketchbrawl_lobbies_update', sketchbrawl.getPublicLobbies());
     });
 
-    socket.on('scribbl_get_lobbies', () => {
-      socket.emit('scribbl_lobbies_update', scribbl.getPublicLobbies());
+    socket.on('sketchbrawl_get_lobbies', () => {
+      socket.emit('sketchbrawl_lobbies_update', sketchbrawl.getPublicLobbies());
     });
 
-    socket.on('scribbl_start_game', ({ lobbyId }) => {
-      const turnInfo = scribbl.startGame(lobbyId, socket.id);
+    socket.on('sketchbrawl_start_game', ({ lobbyId }) => {
+      const turnInfo = sketchbrawl.startGame(lobbyId, socket.id);
       if (turnInfo.error) return socket.emit('error_event', turnInfo.error);
-      io.emit('scribbl_lobbies_update', scribbl.getPublicLobbies());
+      io.emit('sketchbrawl_lobbies_update', sketchbrawl.getPublicLobbies());
       _broadcastTurn(lobbyId, turnInfo);
     });
 
-    // ── Scribbl: Drawing ───────────────────────────────────────────────────
-    socket.on('scribbl_draw', ({ lobbyId, stroke }) => {
-      if (!scribbl.isDrawer(lobbyId, socket.id)) return;
-      if (!scribbl.canDraw(socket.id)) return;
-      socket.to(lobbyId).emit('scribbl_draw', { stroke });
+    // ── SketchBrawl: Drawing ───────────────────────────────────────────────────
+    socket.on('sketchbrawl_draw', ({ lobbyId, stroke }) => {
+      if (!sketchbrawl.isDrawer(lobbyId, socket.id)) return;
+      if (!sketchbrawl.canDraw(socket.id)) return;
+      socket.to(lobbyId).emit('sketchbrawl_draw', { stroke });
     });
 
-    socket.on('scribbl_clear', ({ lobbyId }) => {
-      if (!scribbl.isDrawer(lobbyId, socket.id)) return;
-      io.to(lobbyId).emit('scribbl_clear');
+    socket.on('sketchbrawl_clear', ({ lobbyId }) => {
+      if (!sketchbrawl.isDrawer(lobbyId, socket.id)) return;
+      io.to(lobbyId).emit('sketchbrawl_clear');
     });
 
-    // ── Scribbl: Chat / Word Detection ────────────────────────────────────
-    socket.on('scribbl_chat', ({ lobbyId, message }) => {
+    // ── SketchBrawl: Chat / Word Detection ────────────────────────────────────
+    socket.on('sketchbrawl_chat', ({ lobbyId, message }) => {
       if (!message || typeof message !== 'string') return;
       const msg = message.slice(0, 100).trim();
-      const res = scribbl.handleChat(lobbyId, socket.id, msg);
+      const res = sketchbrawl.handleChat(lobbyId, socket.id, msg);
       if (!res.ok) return;
 
       if (res.solved) {
         // Private message — only the solver sees "You got it!"
-        socket.emit('scribbl_solved', { scoreDelta: res.scoreDelta, scores: res.scores });
+        socket.emit('sketchbrawl_solved', { scoreDelta: res.scoreDelta, scores: res.scores });
         // Tell everyone someone solved (no word reveal)
-        io.to(lobbyId).emit('scribbl_chat_msg', { sender: res.sender, message: `🎉 ${res.sender} guessed the word!`, system: true, scores: res.scores });
+        io.to(lobbyId).emit('sketchbrawl_chat_msg', { sender: res.sender, message: `🎉 ${res.sender} guessed the word!`, system: true, scores: res.scores });
 
         if (res.allSolved) {
           // Everyone solved — end turn early
-          const turnEnd = scribbl.endTurnEarly(lobbyId);
+          const turnEnd = sketchbrawl.endTurnEarly(lobbyId);
           if (turnEnd) {
-            io.to(lobbyId).emit('scribbl_turn_end', turnEnd);
+            io.to(lobbyId).emit('sketchbrawl_turn_end', turnEnd);
             if (!turnEnd.gameOver) {
               setTimeout(() => {
-                const nextTurn = scribbl.nextTurn(lobbyId);
+                const nextTurn = sketchbrawl.nextTurn(lobbyId);
                 if (nextTurn) _broadcastTurn(lobbyId, nextTurn);
               }, turnEnd.nextTurnIn || 3000);
             }
           }
         }
       } else {
-        io.to(lobbyId).emit('scribbl_chat_msg', { sender: res.sender, message: res.message, system: false });
+        io.to(lobbyId).emit('sketchbrawl_chat_msg', { sender: res.sender, message: res.message, system: false });
       }
     });
 
-    // ── Scribbl: Turn helper ───────────────────────────────────────────────
+    // ── SketchBrawl: Turn helper ───────────────────────────────────────────────
     function _broadcastTurn(lobbyId, turnInfo) {
       const { secretWord, drawer, ...shared } = turnInfo;
       // Broadcast to everyone (including drawer) with hint
-      io.to(lobbyId).emit('scribbl_turn_start', { ...shared, drawer });
+      io.to(lobbyId).emit('sketchbrawl_turn_start', { ...shared, drawer });
       // Send secret word ONLY to the drawer
       const drawerSocket = io.sockets.sockets.get(drawer);
-      drawerSocket?.emit('scribbl_drawer_word', { secretWord });
+      drawerSocket?.emit('sketchbrawl_drawer_word', { secretWord });
     }
 
 
@@ -408,17 +408,17 @@ function initSocket(io) {
       const cleanup = matchService.cleanupPlayer(socket.id);
       if (cleanup?.roomsChanged) io.emit('lobbies_update', matchService.getPublicRooms());
 
-      // Scribbl cleanup
-      const lobbyId = scribbl.getSocketLobby(socket.id);
+      // SketchBrawl cleanup
+      const lobbyId = sketchbrawl.getSocketLobby(socket.id);
       if (lobbyId) {
-        const result = scribbl.leaveLobby(socket.id);
+        const result = sketchbrawl.leaveLobby(socket.id);
         if (result) {
           if (result.disbanded) {
-            io.to(lobbyId).emit('scribbl_lobby_disbanded');
+            io.to(lobbyId).emit('sketchbrawl_lobby_disbanded');
           } else {
-            io.to(lobbyId).emit('scribbl_player_left', { lobby: result.lobby, username: result.username });
+            io.to(lobbyId).emit('sketchbrawl_player_left', { lobby: result.lobby, username: result.username });
           }
-          io.emit('scribbl_lobbies_update', scribbl.getPublicLobbies());
+          io.emit('sketchbrawl_lobbies_update', sketchbrawl.getPublicLobbies());
         }
       }
     });
@@ -426,3 +426,4 @@ function initSocket(io) {
 }
 
 module.exports = { initSocket };
+
