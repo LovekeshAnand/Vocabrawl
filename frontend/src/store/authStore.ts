@@ -6,11 +6,20 @@ const TOKEN_KEY = 'vb_token';
 const CONSENT_KEY = 'vb_cookies_accepted';
 
 // Helper to manage cookies
+const getBrowserStorageToken = () => {
+  if (typeof window === 'undefined') return null;
+  const fromCookie = getCookie(TOKEN_KEY);
+  return fromCookie || localStorage.getItem(TOKEN_KEY);
+};
+
 const getCookie = (name: string) => {
   if (typeof document === 'undefined') return null;
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop()?.split(';').shift();
+  if (parts.length === 2) {
+    const raw = parts.pop()?.split(';').shift();
+    return raw ? decodeURIComponent(raw) : null;
+  }
   return null;
 };
 
@@ -18,7 +27,9 @@ const setCookie = (name: string, value: string, days = 7) => {
   if (typeof document === 'undefined') return;
   const date = new Date();
   date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-  document.cookie = `${name}=${value};expires=${date.toUTCString()};path=/;SameSite=Lax`;
+  const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
+  const securePart = isSecure ? ';Secure' : '';
+  document.cookie = `${name}=${encodeURIComponent(value)};expires=${date.toUTCString()};path=/;SameSite=Lax${securePart}`;
 };
 
 const setStoredToken = (token: string, useCookie: boolean) => {
@@ -47,8 +58,8 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
-  user: null, 
-  token: null, 
+  user: null,
+  token: getBrowserStorageToken(),
   loading: false, 
   error: null,
   cookiesAccepted: typeof window !== 'undefined' ? localStorage.getItem(CONSENT_KEY) === 'true' : false,
@@ -127,7 +138,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   hydrate: async () => {
     if (typeof window === 'undefined') return;
-    const token = getCookie(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY); // Fallback to localStorage for migration
+    const token = getBrowserStorageToken();
     if (!token) return;
     
     try {

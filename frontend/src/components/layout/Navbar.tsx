@@ -40,22 +40,21 @@ export function Navbar() {
   return (
     <nav style={{ 
       position: 'sticky', top: 0, zIndex: 1000, 
-      background: 'rgba(255, 255, 255, 0.85)', 
       backdropFilter: 'blur(16px)',
       borderBottom: '2.5px solid var(--wb-border)', 
       boxShadow: '0 4px 0 var(--wb-border)' 
-    }}>
-      <div style={{ maxWidth: 1600, margin: '0 auto', height: 72, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px' }}>
+    }} className="wb-nav">
+      <div className="wb-nav-inner" style={{ maxWidth: 1600, margin: '0 auto', height: 72, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px' }}>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
           <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 36, height: 36, background: 'var(--wb-ink)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
               <Gamepad2 size={22} />
             </div>
-            <span className="font-hand" style={{ fontSize: '2.4rem', fontWeight: 900, color: 'var(--wb-ink)' }}>VocaBrawl</span>
+            <span className="font-hand wb-nav-brand" style={{ fontSize: '2.4rem', fontWeight: 900, color: 'var(--wb-ink)' }}>VocaBrawl</span>
           </Link>
 
-          <div style={{ display: 'flex', gap: 4, background: 'var(--wb-paper-alt)', padding: 4, borderRadius: 12, border: '1.5px solid var(--wb-border)' }}>
+          <div className="wb-nav-games" style={{ display: 'flex', gap: 4, background: 'var(--wb-paper-alt)', padding: 4, borderRadius: 12, border: '1.5px solid var(--wb-border)' }}>
             {gameLinks.map((link) => (
               <Link key={link.href} href={link.href} style={{ textDecoration: 'none' }}>
                 <span className="font-hand" style={{ 
@@ -72,8 +71,8 @@ export function Navbar() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-          <div style={{ display: 'flex', gap: 16 }}>
+        <div className="wb-nav-main" style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+          <div style={{ display: 'flex', gap: 12 }}>
             {mainLinks.map((link) => (
               <Link key={link.href} href={link.href} style={{ textDecoration: 'none' }}>
                 <span className="font-hand" style={{ 

@@ -10,6 +10,7 @@ function readEnv(name, fallback = '') {
 module.exports = {
   PORT:           parseInt(readEnv('PORT', '3001'), 10),
   FRONTEND_URL:   readEnv('FRONTEND_URL', 'http://localhost:3000'),
+  FRONTEND_URLS:  readEnv('FRONTEND_URLS', ''),
   DATABASE_URL:   readEnv('DATABASE_URL') || readEnv('POSTGRES_URL') || readEnv('SUPABASE_DB_URL'),
   DB_SSL:         readEnv('DB_SSL', 'true') !== 'false',
   JWT_SECRET:     readEnv('JWT_SECRET', 'vocabrawl-super-secret-dev-key-change-in-prod'),

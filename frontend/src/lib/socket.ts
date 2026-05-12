@@ -1,6 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || API_URL;
 let _socket: Socket | null = null;
 let _currentToken: string | null | undefined = undefined;
 
@@ -16,7 +17,8 @@ export function connectSocket(token?: string | null): Socket {
   _currentToken = token;
   _socket = io(SOCKET_URL, {
     autoConnect: true,
-    transports: ['websocket'],
+    // Allow polling fallback for hosts/proxies that block websocket-only handshakes.
+    transports: ['websocket', 'polling'],
     auth: token ? { token } : {},
     reconnectionDelay: 1000,
     reconnectionAttempts: 5,

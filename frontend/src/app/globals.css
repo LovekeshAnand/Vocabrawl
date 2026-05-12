@@ -4,6 +4,7 @@
 html { scroll-behavior: smooth; }
 
 :root {
+  --wb-bg:         #FAFAF7;
   --wb-paper:      #FAFAF7;
   --wb-paper-alt:  #F5F5F0;
   --wb-ink:        #1A1A2E;
@@ -28,6 +29,7 @@ html { scroll-behavior: smooth; }
 }
 
 [data-theme='dark'] {
+  --wb-bg:         #0F1115;
   --wb-paper:      #121212;
   --wb-paper-alt:  #1E1E1E;
   --wb-ink:        #F8F9FA;
@@ -44,7 +46,7 @@ html { scroll-behavior: smooth; }
 }
 
 body {
-  background-color: var(--wb-paper);
+  background-color: var(--wb-bg);
   color: var(--wb-ink);
   font-family: 'Inter', system-ui, sans-serif;
   line-height: 1.6;
@@ -53,6 +55,31 @@ body {
     linear-gradient(90deg, var(--wb-grid) 1px, transparent 1px);
   background-size: 40px 40px;
   min-height: 100vh;
+}
+
+.wb-nav {
+  background: color-mix(in srgb, var(--wb-paper) 88%, transparent);
+}
+
+@media (max-width: 1024px) {
+  .wb-nav-inner {
+    height: auto !important;
+    min-height: 72px;
+    padding: 10px 14px !important;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .wb-nav-brand {
+    font-size: 1.9rem !important;
+  }
+  .wb-nav-games {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+  }
+  .wb-nav-main {
+    gap: 10px !important;
+  }
 }
 
 .font-hand { font-family: 'Caveat', cursive; }

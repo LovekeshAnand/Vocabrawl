@@ -191,7 +191,7 @@ export default function HomePage() {
       </section>
 
       {/* Pro Features */}
-      <section style={{ padding: '100px 24px', background: 'white', borderTop: '2.5px solid var(--wb-border)' }}>
+      <section style={{ padding: '100px 24px', background: 'var(--wb-paper)', borderTop: '2.5px solid var(--wb-border)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
           <h2 className="font-hand" style={{ fontSize: '3.5rem', marginBottom: 60 }}>Why You&apos;ll Love VocaBrawl</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 40 }}>

@@ -14,7 +14,26 @@ const { initSocket } = require('./socket');
 // ── Express app ───────────────────────────────────────────────────────────────
 const app = express();
 
-app.use(cors({ origin: config.FRONTEND_URL, methods: ['GET', 'POST', 'OPTIONS'] }));
+const allowedOrigins = [
+  config.FRONTEND_URL,
+  ...config.FRONTEND_URLS.split(',').map((o) => o.trim()).filter(Boolean),
+];
+
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+  return allowedOrigins.includes(origin);
+};
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (isAllowedOrigin(origin)) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
+  },
+  methods: ['GET', 'POST', 'OPTIONS'],
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '16kb' }));
 
 app.get('/health', (_req, res) => res.json({ status: 'ok', ts: Date.now() }));
@@ -27,7 +46,14 @@ app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
 // ── HTTP + Socket.io ──────────────────────────────────────────────────────────
 const server = http.createServer(app);
 const io     = new Server(server, {
-  cors:              { origin: config.FRONTEND_URL, methods: ['GET', 'POST'] },
+  cors:              {
+    origin: (origin, callback) => {
+      if (isAllowedOrigin(origin)) return callback(null, true);
+      return callback(new Error('Not allowed by CORS'));
+    },
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
   perMessageDeflate: false,   // HPC: skip compression for lower latency
   pingInterval:      10_000,
   pingTimeout:       5_000,
