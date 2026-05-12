@@ -18,7 +18,7 @@ export function Board({ guesses, currentGuess, shakeRow }: BoardProps) {
     if (i < guesses.length) {
       const g = guesses[i];
       return (
-        <motion.div key={i} style={{ display: 'flex', gap: 8 }}
+        <motion.div key={i} className="wb-board-row"
           animate={shakeRow === i ? { x: [-6, 6, -4, 4, 0], transition: { duration: 0.5 } } : {}}>
           {g.result.map((state, j) => (
             <motion.div key={j}
@@ -33,7 +33,7 @@ export function Board({ guesses, currentGuess, shakeRow }: BoardProps) {
     } else if (i === guesses.length) {
       const letters = currentGuess.padEnd(WORD_LENGTH, ' ').split('');
       return (
-        <motion.div key={i} style={{ display: 'flex', gap: 8 }}
+        <motion.div key={i} className="wb-board-row"
           animate={shakeRow === i ? { x: [-6, 6, -4, 4, 0], transition: { duration: 0.5 } } : {}}>
           {letters.map((l, j) => (
             <motion.div key={j} className={`wb-tile ${l.trim() ? 'has-letter' : ''}`}
@@ -46,12 +46,12 @@ export function Board({ guesses, currentGuess, shakeRow }: BoardProps) {
       );
     } else {
       return (
-        <div key={i} style={{ display: 'flex', gap: 8 }}>
+        <div key={i} className="wb-board-row">
           {Array.from({ length: WORD_LENGTH }).map((_, j) => <div key={j} className="wb-tile" />)}
         </div>
       );
     }
   });
 
-  return <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>{rows}</div>;
+  return <div className="wb-game-board">{rows}</div>;
 }

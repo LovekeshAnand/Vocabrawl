@@ -183,18 +183,7 @@ export function Canvas({ lobbyId, isDrawer, width = 1000, height = 700 }: Canvas
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', gap: 16 }}>
       
-      <div style={{ 
-        flex: 1, 
-        position: 'relative', 
-        background: 'white', 
-        borderRadius: 12, 
-        border: '2.5px solid var(--wb-ink)', 
-        overflow: 'hidden', 
-        boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.05)',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center'
-      }}>
+      <div className="scribbl-canvas-frame">
         <div style={{ 
           width: '100%', 
           height: '100%', 
@@ -232,13 +221,8 @@ export function Canvas({ lobbyId, isDrawer, width = 1000, height = 700 }: Canvas
 
       {isDrawer && (
         <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <div style={{ 
-            display: 'flex', gap: 12, padding: '8px 16px', 
-            background: 'var(--wb-paper)', borderRadius: 16, border: '2.5px solid var(--wb-border)',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
-            flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center'
-          }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 20px)', gap: 4 }}>
+          <div className="scribbl-tools">
+            <div className="scribbl-color-grid">
               {colors.map(c => (
                 <button 
                   key={c} 
@@ -261,7 +245,7 @@ export function Canvas({ lobbyId, isDrawer, width = 1000, height = 700 }: Canvas
                   key={s} 
                   onClick={() => setSize(s)}
                   style={{
-                    width: 28, height: 28, borderRadius: '50%', background: 'white',
+                    width: 28, height: 28, borderRadius: '50%', background: '#FFFFFF',
                     border: size === s ? '2.5px solid var(--wb-ink)' : '1px solid var(--wb-border)',
                     display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer',
                     transition: 'all 0.2s'
@@ -276,7 +260,7 @@ export function Canvas({ lobbyId, isDrawer, width = 1000, height = 700 }: Canvas
               <button 
                 className="wb-btn wb-btn-sm" 
                 onClick={() => setColor('#FFFFFF')} 
-                style={{ background: color === '#FFFFFF' ? '#f3f4f6' : 'white', padding: '4px 8px', fontSize: '0.8rem' }}
+                style={{ background: color === '#FFFFFF' ? 'var(--wb-paper-alt)' : 'var(--wb-paper)', padding: '4px 8px', fontSize: '0.8rem' }}
                 title="Eraser"
               >
                 🧽

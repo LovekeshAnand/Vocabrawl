@@ -48,7 +48,7 @@ export function Navbar() {
         
         <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
           <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 36, height: 36, background: 'var(--wb-ink)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+            <div className="wb-nav-logo" style={{ width: 36, height: 36, background: 'var(--wb-ink)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--wb-paper)' }}>
               <Gamepad2 size={22} />
             </div>
             <span className="font-hand wb-nav-brand" style={{ fontSize: '2.4rem', fontWeight: 900, color: 'var(--wb-ink)' }}>VocaBrawl</span>
@@ -72,7 +72,7 @@ export function Navbar() {
         </div>
 
         <div className="wb-nav-main" style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-          <div style={{ display: 'flex', gap: 12 }}>
+          <div className="wb-nav-secondary" style={{ display: 'flex', gap: 12 }}>
             {mainLinks.map((link) => (
               <Link key={link.href} href={link.href} style={{ textDecoration: 'none' }}>
                 <span className="font-hand" style={{ 
@@ -87,9 +87,9 @@ export function Navbar() {
             ))}
           </div>
 
-          <div style={{ width: 2, height: 24, background: 'var(--wb-border)', opacity: 0.5 }} />
+          <div className="wb-nav-secondary" style={{ width: 2, height: 24, background: 'var(--wb-border)', opacity: 0.5 }} />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div className="wb-nav-actions" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <a href="https://github.com/LovekeshAnand/Vocabrawl" target="_blank" rel="noopener noreferrer" style={{ 
               color: 'var(--wb-ink)', transition: 'transform 0.2s' 
             }} className="hover-scale">

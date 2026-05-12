@@ -98,7 +98,7 @@ export default function GauntletPage() {
 
         {/* Stats bar */}
         {gauntletStatus !== 'idle' && (
-          <div className="wb-card" style={{ padding: '16px 24px', marginBottom: 24, display: 'flex', gap: 32, alignItems: 'center' }}>
+          <div className="wb-card wb-mobile-stack" style={{ padding: '16px 24px', marginBottom: 24, alignItems: 'center' }}>
             <div>
               <p style={{ fontSize: '0.8rem', color: 'var(--wb-ink-faint)', marginBottom: 2 }}>SCORE</p>
               <p className="font-hand" style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--wb-ink)' }}>{gauntletScore}</p>
@@ -140,7 +140,7 @@ export default function GauntletPage() {
             <p className="font-hand" style={{ fontSize: '1.5rem', color: 'var(--wb-ink-light)', marginBottom: 24 }}>
               Final Score: <strong style={{ color: 'var(--wb-ink)', fontSize: '2.5rem' }}>{gauntletScore}</strong>
             </p>
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+            <div className="wb-button-row">
               <button className="wb-btn wb-btn-primary" onClick={startGauntlet}>Play Again</button>
               <button className="wb-btn" onClick={() => window.location.href = '/leaderboard'}>Leaderboard</button>
             </div>
@@ -158,7 +158,7 @@ export default function GauntletPage() {
         {gauntletStatus === 'idle' && (
           <div style={{ marginTop: 40 }}>
             <h2 className="font-hand" style={{ fontSize: '2rem', marginBottom: 20 }}>Gauntlet Rules</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
               <div className="wb-card" style={{ padding: 24 }}>
                 <h4 style={{ fontWeight: 700, marginBottom: 12 }}>⚡ Speed is Survival</h4>
                 <p style={{ fontSize: '0.95rem', color: 'var(--wb-ink-light)', lineHeight: 1.5 }}>

@@ -9,18 +9,18 @@ interface GlassCardProps extends HTMLMotionProps<'div'> {
 
 export function GlassCard({ children, intensity = 'mid', style, ...props }: GlassCardProps) {
   const blur = intensity === 'low' ? 8 : intensity === 'mid' ? 16 : 24;
-  const opacity = intensity === 'low' ? 0.4 : intensity === 'mid' ? 0.6 : 0.8;
+  const surface = intensity === 'high' ? 'var(--wb-surface-strong)' : 'var(--wb-surface)';
 
   return (
     <motion.div
       {...props}
       style={{
-        background: `rgba(255, 255, 255, ${opacity})`,
+        background: surface,
         backdropFilter: `blur(${blur}px)`,
         WebkitBackdropFilter: `blur(${blur}px)`,
-        border: '1.5px solid rgba(255, 255, 255, 0.3)',
-        boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
-        borderRadius: 16,
+        border: '1.5px solid var(--wb-border)',
+        boxShadow: 'var(--shadow-md)',
+        borderRadius: 12,
         ...style
       }}
     >

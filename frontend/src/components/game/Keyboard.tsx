@@ -37,16 +37,16 @@ export function Keyboard({ guesses, onKey, disabled = false }: KeyboardProps) {
   }, [onKey, disabled]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%', alignItems: 'center', marginTop: 24 }}>
+    <div className="wb-keyboard">
       {ROWS.map((row, ri) => (
-        <div key={ri} style={{ display: 'flex', gap: 6, width: '100%', justifyContent: 'center' }}>
+        <div key={ri} className="wb-keyboard-row">
           {row.map(key => {
             const s = keyStates[key];
             const cls = s === 2 ? 'correct' : s === 1 ? 'present' : s === 0 ? 'absent' : '';
             const isWide = key === 'ENTER' || key === '⌫';
             return (
               <button key={key} className={`wb-key ${cls}`}
-                style={{ flex: isWide ? 1.5 : 1, maxWidth: isWide ? 72 : 44, fontSize: isWide ? '0.65rem' : '0.85rem' }}
+                style={{ flex: isWide ? 1.45 : 1, minWidth: 0, maxWidth: isWide ? 74 : 46, fontSize: isWide ? '0.65rem' : undefined }}
                 onClick={() => !disabled && onKey(key)} disabled={disabled} aria-label={key}>
                 {key}
               </button>

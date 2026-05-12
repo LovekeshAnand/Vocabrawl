@@ -146,13 +146,13 @@ export default function ArenaPage() {
       case 'brawl':
       default:
         return (
-          <div style={{ display: 'flex', gap: 32, justifyContent: 'center', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, minWidth: 280 }}>
+          <div className="wb-arena-game">
+            <div className="wb-main-board">
               <p className="font-hand" style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--wb-ink)', marginBottom: 12 }}>Your Board</p>
               <Board guesses={guesses} currentGuess={status === 'playing' ? currentGuess : ''} shakeRow={shakeRow} />
               <Keyboard guesses={guesses} onKey={handleKey} disabled={status !== 'playing'} />
             </div>
-            <div style={{ paddingTop: 40 }}>
+            <div className="wb-ghost-wrap">
               <GhostBoard progress={opponentProgress} label={`👻 ${opponent?.username ?? 'Opponent'}`} guessCount={opponentProgress.length} />
             </div>
           </div>
@@ -168,8 +168,8 @@ export default function ArenaPage() {
 
       <main style={{ flex: 1, padding: '24px 16px', maxWidth: 1100, margin: '0 auto', width: '100%' }}>
         {/* Header bar */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-          <div className="wb-card" style={{ padding: '8px 20px' }}>
+        <div className="wb-arena-header">
+          <div className="wb-card wb-player-pill">
             <span className="font-hand" style={{ fontSize: '1.2rem', color: 'var(--wb-ink)' }}>
               👤 {you?.username ?? '…'} <span style={{ color: 'var(--wb-blue)' }}>({you?.elo ?? '—'} ELO)</span>
             </span>
@@ -180,7 +180,7 @@ export default function ArenaPage() {
             </span>
             <button className="wb-btn wb-btn-sm" onClick={() => setHelpOpen(true)}>?</button>
           </div>
-          <div className="wb-card" style={{ padding: '8px 20px' }}>
+          <div className="wb-card wb-player-pill">
             <span className="font-hand" style={{ fontSize: '1.2rem', color: 'var(--wb-ink)' }}>
               👤 {opponent?.username ?? '…'} <span style={{ color: 'var(--wb-amber)' }}>({opponent?.elo ?? '—'} ELO)</span>
             </span>
@@ -200,7 +200,7 @@ export default function ArenaPage() {
             style={{ textAlign: 'center', padding: 24, marginTop: 32, maxWidth: 480, margin: '32px auto 0' }}>
             <p className="font-hand" style={{ fontSize: '1.3rem', color: 'var(--wb-ink-light)', marginBottom: 8 }}>The word was:</p>
             <p className="font-hand" style={{ fontSize: '3rem', fontWeight: 700, color: 'var(--wb-ink)', letterSpacing: 4 }}>{secretWord}</p>
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 20 }}>
+            <div className="wb-button-row" style={{ marginTop: 20 }}>
               <button className="wb-btn wb-btn-primary" onClick={() => router.push('/')}>Play Again</button>
               <button className="wb-btn" onClick={() => router.push('/leaderboard')}>Leaderboard</button>
             </div>

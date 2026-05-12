@@ -110,7 +110,7 @@ export default function ScribblPage() {
   }, [lobbyId, token, store.status, hydrated]);
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--wb-paper)' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--wb-bg)' }}>
       <Navbar />
       <ToastContainer />
       

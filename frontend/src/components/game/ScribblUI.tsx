@@ -136,10 +136,10 @@ export function ScribblUI() {
   }
 
   return (
-    <div style={{ display: 'flex', gap: 20, maxWidth: 1600, width: '98vw', margin: '0 auto', height: 'calc(100vh - 120px)', paddingBottom: 20 }}>
+    <div className="scribbl-shell">
       
       {/* Left Sidebar: Players */}
-      <div style={{ width: 250, display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div className="scribbl-side" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <GlassCard intensity="mid" style={{ padding: '16px', flex: 1, overflowY: 'auto' }}>
           <h3 className="font-hand" style={{ fontSize: '1.5rem', borderBottom: '2px dashed var(--wb-border)', paddingBottom: 8, marginBottom: 12 }}>Players</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -155,8 +155,8 @@ export function ScribblUI() {
                   style={{ 
                     padding: '8px 12px', 
                     borderRadius: 8, 
-                    background: p.solved ? '#F0FDF4' : 'var(--wb-paper-alt)',
-                    border: `1.5px solid ${p.solved ? '#22C55E' : 'var(--wb-border)'}`,
+                    background: p.solved ? 'var(--wb-correct-bg)' : 'var(--wb-paper-alt)',
+                    border: `1.5px solid ${p.solved ? 'var(--wb-correct)' : 'var(--wb-border)'}`,
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                   }}
                 >
@@ -182,9 +182,9 @@ export function ScribblUI() {
       </div>
 
       {/* Center: Canvas & Header */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+      <div className="scribbl-main">
         {/* Header (Word & Time) */}
-        <GlassCard intensity="low" style={{ padding: '8px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <GlassCard intensity="low" className="scribbl-topbar">
           <div className="font-hand" style={{ fontSize: '1.2rem', color: 'var(--wb-ink-faint)' }}>
             Round {round} of {totalRounds}
           </div>
@@ -236,7 +236,7 @@ export function ScribblUI() {
         </GlassCard>
 
         {/* Drawing Area */}
-        <GlassCard intensity="high" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 16, overflow: 'hidden' }}>
+        <GlassCard intensity="high" className="scribbl-canvas-card">
           {lobbyId && status === 'playing' ? (
             <Canvas lobbyId={lobbyId} isDrawer={isDrawer} />
           ) : status === 'finished' ? (
@@ -255,8 +255,8 @@ export function ScribblUI() {
       </div>
 
       {/* Right Sidebar: Chat */}
-      <GlassCard intensity="mid" style={{ width: 300, display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: '12px 16px', background: 'rgba(0,0,0,0.03)', borderBottom: '2px solid var(--wb-border)' }}>
+      <GlassCard intensity="mid" className="scribbl-chat" style={{ padding: 0 }}>
+        <div style={{ padding: '12px 16px', background: 'var(--wb-paper-alt)', borderBottom: '2px solid var(--wb-border)' }}>
           <h3 className="font-hand" style={{ fontSize: '1.3rem', margin: 0 }}>Chat & Guesses</h3>
         </div>
         
@@ -270,8 +270,8 @@ export function ScribblUI() {
                 style={{ 
                   padding: '6px 12px', 
                   borderRadius: 8, 
-                  background: msg.system ? '#F0FDF4' : 'var(--wb-paper-alt)',
-                  color: msg.system ? '#166534' : 'var(--wb-ink)',
+                  background: msg.system ? 'var(--wb-correct-bg)' : 'var(--wb-paper-alt)',
+                  color: msg.system ? 'var(--wb-correct)' : 'var(--wb-ink)',
                   fontWeight: msg.system ? 700 : 400,
                   fontSize: '0.95rem'
                 }}
@@ -283,7 +283,7 @@ export function ScribblUI() {
           </AnimatePresence>
         </div>
 
-        <form onSubmit={handleChatSubmit} style={{ padding: 16, borderTop: '2px solid var(--wb-border)', background: 'white' }}>
+        <form onSubmit={handleChatSubmit} style={{ padding: 16, borderTop: '2px solid var(--wb-border)', background: 'var(--wb-paper)' }}>
           <input
             type="text"
             className="wb-input"
