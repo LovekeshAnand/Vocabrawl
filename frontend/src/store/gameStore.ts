@@ -25,7 +25,7 @@ interface GameState {
   shakeRow: number | null;
   onlineCount: number;
   roomExpiresAt: number | null;
-  mode: 'brawl' | 'word_chain' | 'anagrams' | 'scribbl';
+  mode: 'brawl' | 'word_chain' | 'anagrams' | 'sketchbrawl';
   scrambledWord: string | null;
   currentChainWord: string | null;
   scores: { you: number; opponent: number };
@@ -167,3 +167,4 @@ export const useGameStore = create<GameState>((set, get) => ({
   resetGauntlet: () => set({ gauntletScore: 0, gauntletTime: 0, gauntletGuesses: [], gauntletCurrentGuess: '', gauntletStatus: 'idle' }),
   setRoomExpiresAt: (at) => set({ roomExpiresAt: at }),
 }));
+

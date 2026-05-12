@@ -96,7 +96,7 @@ function PrivateRoomContent() {
                     onChange={(e) => setMode(e.target.value)}
                     style={{ cursor: 'pointer' }}
                   >
-                    <option value="brawl">Standard Brawl (Wordle-style)</option>
+                    <option value="brawl">Standard Brawl (VocaWord-style)</option>
                     <option value="word_chain">Word Chain (Combo Mode)</option>
                     <option value="anagrams">Anagram Scramble</option>
                   </select>
@@ -183,3 +183,4 @@ export default function PrivateRoomPage() {
     </Suspense>
   );
 }
+

@@ -13,7 +13,7 @@ export function Footer() {
   
   const siteLinks = [
     { href: '/', label: 'Home', icon: <Home size={14} /> },
-    { href: '/lobbies', label: 'Scribbl', icon: <Palette size={14} /> },
+    { href: '/lobbies', label: 'SketchBrawl', icon: <Palette size={14} /> },
     { href: '/leaderboard', label: 'Ranks', icon: <Trophy size={14} /> },
     { href: '/about', label: 'Info', icon: <Info size={14} /> },
   ];
@@ -102,3 +102,4 @@ export function Footer() {
     </footer>
   );
 }
+

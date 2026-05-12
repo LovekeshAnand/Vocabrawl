@@ -38,7 +38,7 @@ export function Navbar() {
   }, [pathname]);
 
   const gameLinks = [
-    { href: '/lobbies', label: 'Scribbl', icon: <Palette size={18} /> },
+    { href: '/lobbies', label: 'SketchBrawl', icon: <Palette size={18} /> },
     { href: '/gauntlet', label: 'Gauntlet', icon: <Zap size={18} /> },
     { href: '/arena', label: 'Arena', icon: <Sword size={18} />, private: true },
   ];
@@ -213,3 +213,4 @@ export function Navbar() {
     </nav>
   );
 }
+

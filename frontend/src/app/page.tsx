@@ -137,7 +137,7 @@ export default function HomePage() {
           <GlassCard intensity="high" style={{ padding: 40, display: 'flex', flexDirection: 'column', gap: 24 }}>
             <div style={{ color: 'var(--wb-blue)', display: 'flex', alignItems: 'center', gap: 16 }}>
               <Palette size={40} />
-              <h3 className="font-hand" style={{ fontSize: '2rem' }}>Scribbl</h3>
+              <h3 className="font-hand" style={{ fontSize: '2rem' }}>SketchBrawl</h3>
             </div>
             <p style={{ color: 'var(--wb-ink-light)', fontSize: '1.05rem', lineHeight: 1.6, flex: 1 }}>
               Classic multiplayer drawing and guessing. Join a room, grab the brush, and let your creativity (or lack of it) shine!
@@ -228,3 +228,4 @@ export default function HomePage() {
     </div>
   );
 }
+

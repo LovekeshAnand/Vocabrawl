@@ -30,7 +30,7 @@ interface Lobby {
   playerCount: number;
   maxPlayers?: number;
   status?: string;
-  type: 'scribbl' | 'match';
+  type: 'sketchbrawl' | 'match';
 }
 
 const matchModes: Array<{
@@ -45,7 +45,7 @@ const matchModes: Array<{
     title: 'Brawl',
     icon: <Sword size={20} />,
     accent: 'var(--wb-blue)',
-    description: 'Wordle-style public duels using the same hidden word.',
+    description: 'VocaWord-style public duels using the same hidden word.',
   },
   {
     mode: 'word_chain',
@@ -67,7 +67,7 @@ export default function LobbiesPage() {
   const router = useRouter();
   const { user, hydrate, token } = useAuthStore();
   const { addToast, setMatchStart, setRoomExpiresAt } = useGameStore();
-  const [scribblLobbies, setScribblLobbies] = useState<Lobby[]>([]);
+  const [sketchbrawlLobbies, setSketchBrawlLobbies] = useState<Lobby[]>([]);
   const [matchLobbies, setMatchLobbies] = useState<Lobby[]>([]);
 
   const [hydrated, setHydrated] = useState(false);
@@ -84,14 +84,14 @@ export default function LobbiesPage() {
     const socket = connectSocket(token);
 
     socket.emit('get_public_rooms');
-    socket.emit('scribbl_get_lobbies');
+    socket.emit('sketchbrawl_get_lobbies');
 
     socket.on('lobbies_update', (rooms: Omit<Lobby, 'type'>[]) => {
       setMatchLobbies(rooms.map((r) => ({ ...r, type: 'match' })));
     });
 
-    socket.on('scribbl_lobbies_update', (rooms: Omit<Lobby, 'type'>[]) => {
-      setScribblLobbies(rooms.map((r) => ({ ...r, type: 'scribbl' })));
+    socket.on('sketchbrawl_lobbies_update', (rooms: Omit<Lobby, 'type'>[]) => {
+      setSketchBrawlLobbies(rooms.map((r) => ({ ...r, type: 'sketchbrawl' })));
     });
 
     socket.on('private_room_created', ({ roomCode, expiresAt }) => {
@@ -110,16 +110,16 @@ export default function LobbiesPage() {
 
     return () => {
       socket.off('lobbies_update');
-      socket.off('scribbl_lobbies_update');
+      socket.off('sketchbrawl_lobbies_update');
       socket.off('private_room_created');
       socket.off('match_start');
       socket.off('error_event');
     };
   }, [token, hydrated, router, setMatchStart, setRoomExpiresAt, addToast]);
 
-  const handleJoinScribbl = (lobbyId: string) => {
+  const handleJoinSketchBrawl = (lobbyId: string) => {
     if (!user) { router.push('/login'); return; }
-    router.push(`/scribbl/${lobbyId}`);
+    router.push(`/sketchbrawl/${lobbyId}`);
   };
 
   const handleJoinMatch = (roomCode: string) => {
@@ -127,12 +127,12 @@ export default function LobbiesPage() {
     router.push(`/arena/lobby/${roomCode}`);
   };
 
-  const handleCreateScribbl = () => {
+  const handleCreateSketchBrawl = () => {
     if (!user) { router.push('/login'); return; }
     const socket = connectSocket(token);
-    socket.emit('scribbl_create_lobby', { rounds: 3, maxPlayers: 8, visibility });
-    socket.once('scribbl_lobby_joined', ({ lobbyId }) => {
-      router.push(`/scribbl/${lobbyId}`);
+    socket.emit('sketchbrawl_create_lobby', { rounds: 3, maxPlayers: 8, visibility });
+    socket.once('sketchbrawl_lobby_joined', ({ lobbyId }) => {
+      router.push(`/sketchbrawl/${lobbyId}`);
     });
   };
 
@@ -148,7 +148,7 @@ export default function LobbiesPage() {
     if (code.length === 6) {
       handleJoinMatch(code);
     } else if (code) {
-      router.push(`/scribbl/${code}`);
+      router.push(`/sketchbrawl/${code}`);
     }
   };
 
@@ -164,7 +164,7 @@ export default function LobbiesPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 16 }}>
         <div>
           <h3 className="font-hand" style={{ fontSize: '1.45rem', margin: 0 }}>
-            {lobby.type === 'scribbl' ? 'Scribbl' : matchModes.find(game => game.mode === lobby.mode)?.title || 'Brawl'}
+            {lobby.type === 'sketchbrawl' ? 'SketchBrawl' : matchModes.find(game => game.mode === lobby.mode)?.title || 'Brawl'}
           </h3>
           <p style={{ color: 'var(--wb-ink-light)', margin: 0, fontSize: '0.9rem' }}>
             Host: {lobby.hostName || lobby.host || 'Player'}
@@ -177,13 +177,13 @@ export default function LobbiesPage() {
       </div>
 
       <div style={{ marginTop: 'auto' }}>
-        {lobby.type === 'scribbl' && lobby.status === 'playing' ? (
+        {lobby.type === 'sketchbrawl' && lobby.status === 'playing' ? (
           <button className="wb-btn wb-btn-red" style={{ width: '100%' }} disabled>Game in Progress</button>
         ) : (
           <button
             className="wb-btn wb-btn-green"
             style={{ width: '100%' }}
-            onClick={() => lobby.type === 'scribbl' ? handleJoinScribbl(lobby.id!) : handleJoinMatch(lobby.code!)}
+            onClick={() => lobby.type === 'sketchbrawl' ? handleJoinSketchBrawl(lobby.id!) : handleJoinMatch(lobby.code!)}
             disabled={lobby.playerCount >= (lobby.maxPlayers || 2)}
           >
             {lobby.playerCount >= (lobby.maxPlayers || 2) ? 'Room Full' : 'Join Game'}
@@ -230,7 +230,7 @@ export default function LobbiesPage() {
               }
               setShowCreateModal(true);
             }}>
-              Create Scribbl Room
+              Create SketchBrawl Room
             </button>
           </div>
         </div>
@@ -249,7 +249,7 @@ export default function LobbiesPage() {
                 <option value="private">Private, invite by code</option>
               </select>
             </div>
-            <button className="wb-btn wb-btn-green" onClick={handleCreateScribbl}>Create Now</button>
+            <button className="wb-btn wb-btn-green" onClick={handleCreateSketchBrawl}>Create Now</button>
             <button className="wb-btn wb-btn-red" onClick={() => setShowCreateModal(false)}>Cancel</button>
           </div>
         )}
@@ -260,18 +260,18 @@ export default function LobbiesPage() {
               <div>
                 <h2 className="font-hand" style={{ fontSize: '2rem', display: 'flex', alignItems: 'center', gap: 10 }}>
                   <Palette size={22} color="var(--wb-purple)" />
-                  Scribbl
+                  SketchBrawl
                 </h2>
                 <p style={{ color: 'var(--wb-ink-light)' }}>Drawing and guessing rooms for groups.</p>
               </div>
-              <button className="wb-btn" onClick={() => setShowCreateModal(true)}>Create Scribbl</button>
+              <button className="wb-btn" onClick={() => setShowCreateModal(true)}>Create SketchBrawl</button>
             </div>
-            {scribblLobbies.length > 0 ? (
+            {sketchbrawlLobbies.length > 0 ? (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 18 }}>
-                {scribblLobbies.map(renderLobbyCard)}
+                {sketchbrawlLobbies.map(renderLobbyCard)}
               </div>
             ) : (
-              <p style={{ color: 'var(--wb-ink-faint)' }}>No public Scribbl rooms right now.</p>
+              <p style={{ color: 'var(--wb-ink-faint)' }}>No public SketchBrawl rooms right now.</p>
             )}
           </GlassCard>
 
@@ -308,3 +308,4 @@ export default function LobbiesPage() {
     </div>
   );
 }
+

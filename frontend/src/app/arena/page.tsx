@@ -47,7 +47,7 @@ const gameModes: Array<{
     shortTitle: 'Brawl',
     icon: <Sword size={22} />,
     accent: 'var(--wb-blue)',
-    summary: 'Wordle-style duel. Both players solve the same hidden word.',
+    summary: 'VocaWord-style duel. Both players solve the same hidden word.',
     rankedCopy: 'Best for fast 1v1 ranked games. First clean solve wins the ELO swing.',
     publicCopy: 'Create or join a casual Brawl room for a quick head-to-head word duel.',
   },
@@ -402,3 +402,4 @@ export default function ArenaLobbyPage() {
     </div>
   );
 }
+

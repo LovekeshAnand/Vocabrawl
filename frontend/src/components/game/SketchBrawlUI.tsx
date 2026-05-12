@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useScribblStore } from '../../store/scribblStore';
+import { useSketchBrawlStore } from '../../store/sketchbrawlStore';
 import { useAuthStore } from '../../store/authStore';
 import { getSocket } from '../../lib/socket';
 import { Canvas } from './Canvas';
@@ -13,12 +13,12 @@ type AudioWindow = Window & typeof globalThis & {
   webkitAudioContext?: typeof AudioContext;
 };
 
-export function ScribblUI() {
+export function SketchBrawlUI() {
   const { user } = useAuthStore();
   const { 
     lobbyId, status, players, isDrawer, hint, round, totalRounds, 
     chat, timeLeft, secretWord, drawer, addChatMessage 
-  } = useScribblStore();
+  } = useSketchBrawlStore();
   const [chatInput, setChatInput] = useState('');
   const chatRef = useRef<HTMLDivElement>(null);
 
@@ -53,7 +53,7 @@ export function ScribblUI() {
     const socket = getSocket();
     if (!socket) return;
 
-    socket.on('scribbl_solved', () => {
+    socket.on('sketchbrawl_solved', () => {
       playPop(800);
       confetti({
         particleCount: 100,
@@ -63,18 +63,18 @@ export function ScribblUI() {
       });
     });
 
-    socket.on('scribbl_player_left', ({ username }: { username: string }) => {
+    socket.on('sketchbrawl_player_left', ({ username }: { username: string }) => {
       addChatMessage({ sender: 'System', message: `${username || 'A player'} has left the lobby.`, system: true });
     });
 
-    socket.on('scribbl_player_joined', ({ username }: { username: string }) => {
+    socket.on('sketchbrawl_player_joined', ({ username }: { username: string }) => {
       addChatMessage({ sender: 'System', message: `${username || 'A player'} has joined the lobby!`, system: true });
     });
 
     return () => {
-      socket.off('scribbl_solved');
-      socket.off('scribbl_player_left');
-      socket.off('scribbl_player_joined');
+      socket.off('sketchbrawl_solved');
+      socket.off('sketchbrawl_player_left');
+      socket.off('sketchbrawl_player_joined');
     };
   }, [addChatMessage]);
 
@@ -95,14 +95,14 @@ export function ScribblUI() {
     }
 
     const socket = getSocket();
-    socket?.emit('scribbl_chat', { lobbyId, message: chatInput });
+    socket?.emit('sketchbrawl_chat', { lobbyId, message: chatInput });
     setChatInput('');
   };
 
   const handleStartGame = () => {
     if (!lobbyId) return;
     const socket = getSocket();
-    socket?.emit('scribbl_start_game', { lobbyId });
+    socket?.emit('sketchbrawl_start_game', { lobbyId });
   };
 
   if (status === 'waiting') {
@@ -136,10 +136,10 @@ export function ScribblUI() {
   }
 
   return (
-    <div className="scribbl-shell">
+    <div className="sketchbrawl-shell">
       
       {/* Left Sidebar: Players */}
-      <div className="scribbl-side" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div className="sketchbrawl-side" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <GlassCard intensity="mid" style={{ padding: '16px', flex: 1, overflowY: 'auto' }}>
           <h3 className="font-hand" style={{ fontSize: '1.5rem', borderBottom: '2px dashed var(--wb-border)', paddingBottom: 8, marginBottom: 12 }}>Players</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -182,9 +182,9 @@ export function ScribblUI() {
       </div>
 
       {/* Center: Canvas & Header */}
-      <div className="scribbl-main">
+      <div className="sketchbrawl-main">
         {/* Header (Word & Time) */}
-        <GlassCard intensity="low" className="scribbl-topbar">
+        <GlassCard intensity="low" className="sketchbrawl-topbar">
           <div className="font-hand" style={{ fontSize: 'clamp(0.9rem, 4vw, 1.2rem)', color: 'var(--wb-ink-faint)' }}>
             Round {round} of {totalRounds}
           </div>
@@ -236,7 +236,7 @@ export function ScribblUI() {
         </GlassCard>
 
         {/* Drawing Area */}
-        <GlassCard intensity="high" className="scribbl-canvas-card">
+        <GlassCard intensity="high" className="sketchbrawl-canvas-card">
           {lobbyId && status === 'playing' ? (
             <Canvas lobbyId={lobbyId} isDrawer={isDrawer} />
           ) : status === 'finished' ? (
@@ -255,7 +255,7 @@ export function ScribblUI() {
       </div>
 
       {/* Right Sidebar: Chat */}
-      <GlassCard intensity="mid" className="scribbl-chat" style={{ padding: 0 }}>
+      <GlassCard intensity="mid" className="sketchbrawl-chat" style={{ padding: 0 }}>
         <div style={{ padding: '12px 16px', background: 'var(--wb-paper-alt)', borderBottom: '2px solid var(--wb-border)' }}>
           <h3 className="font-hand" style={{ fontSize: '1.3rem', margin: 0 }}>Chat & Guesses</h3>
         </div>
@@ -299,3 +299,4 @@ export function ScribblUI() {
     </div>
   );
 }
+

@@ -80,19 +80,19 @@ export function Canvas({ lobbyId, isDrawer, width = 1000, height = 700 }: Canvas
       if (ctx) ctx.clearRect(0, 0, width, height);
     };
 
-    socket.on('scribbl_draw', handleDraw);
-    socket.on('scribbl_clear', handleClear);
+    socket.on('sketchbrawl_draw', handleDraw);
+    socket.on('sketchbrawl_clear', handleClear);
 
     return () => {
-      socket.off('scribbl_draw', handleDraw);
-      socket.off('scribbl_clear', handleClear);
+      socket.off('sketchbrawl_draw', handleDraw);
+      socket.off('sketchbrawl_clear', handleClear);
     };
   }, [width, height]);
 
   const emitDraw = (stroke: StrokeData) => {
     if (!isDrawer) return;
     const socket = getSocket();
-    socket?.emit('scribbl_draw', { lobbyId, stroke });
+    socket?.emit('sketchbrawl_draw', { lobbyId, stroke });
   };
 
   const getCoordinates = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>): Point | null => {
@@ -177,13 +177,13 @@ export function Canvas({ lobbyId, isDrawer, width = 1000, height = 700 }: Canvas
     const ctx = canvasRef.current?.getContext('2d');
     if (ctx) ctx.clearRect(0, 0, width, height);
     const socket = getSocket();
-    socket?.emit('scribbl_clear', { lobbyId });
+    socket?.emit('sketchbrawl_clear', { lobbyId });
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', gap: 16 }}>
       
-      <div className="scribbl-canvas-frame">
+      <div className="sketchbrawl-canvas-frame">
         <div style={{ 
           width: '100%', 
           height: '100%', 
@@ -221,8 +221,8 @@ export function Canvas({ lobbyId, isDrawer, width = 1000, height = 700 }: Canvas
 
       {isDrawer && (
         <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-          <div className="scribbl-tools" style={{ flexWrap: 'wrap', justifyContent: 'center' }}>
-            <div className="scribbl-color-grid">
+          <div className="sketchbrawl-tools" style={{ flexWrap: 'wrap', justifyContent: 'center' }}>
+            <div className="sketchbrawl-color-grid">
               {colors.map(c => (
                 <button 
                   key={c} 
@@ -280,3 +280,4 @@ export function Canvas({ lobbyId, isDrawer, width = 1000, height = 700 }: Canvas
     </div>
   );
 }
+

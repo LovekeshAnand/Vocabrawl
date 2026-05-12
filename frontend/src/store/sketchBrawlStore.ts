@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-interface ScribblPlayer {
+interface SketchBrawlPlayer {
   socketId: string;
   username: string;
   score: number;
@@ -15,33 +15,33 @@ interface ChatMessage {
   system: boolean;
 }
 
-interface ScribblLobbyData {
+interface SketchBrawlLobbyData {
   id: string;
-  status: ScribblState['status'];
-  players: ScribblPlayer[];
+  status: SketchBrawlState['status'];
+  players: SketchBrawlPlayer[];
   round: number;
   totalRounds: number;
   hint: string | null;
 }
 
-interface ScribblTurnData {
+interface SketchBrawlTurnData {
   drawer: string;
   hint: string | null;
   round: number;
   totalRounds: number;
   durationMs: number;
-  players: ScribblPlayer[];
+  players: SketchBrawlPlayer[];
 }
 
-interface ScribblTurnEndData {
+interface SketchBrawlTurnEndData {
   gameOver?: boolean;
   [key: string]: unknown;
 }
 
-interface ScribblState {
+interface SketchBrawlState {
   lobbyId: string | null;
   status: 'waiting' | 'playing' | 'finished';
-  players: ScribblPlayer[];
+  players: SketchBrawlPlayer[];
   drawer: string | null; // socketId of the drawer
   isDrawer: boolean;
   hint: string | null;
@@ -51,17 +51,17 @@ interface ScribblState {
   chat: ChatMessage[];
   durationMs: number;
   timeLeft: number;
-  turnEndData: ScribblTurnEndData | null;
+  turnEndData: SketchBrawlTurnEndData | null;
 
-  setLobby: (data: ScribblLobbyData) => void;
-  updatePlayers: (players: ScribblPlayer[]) => void;
-  startTurn: (data: ScribblTurnData, socketId: string) => void;
+  setLobby: (data: SketchBrawlLobbyData) => void;
+  updatePlayers: (players: SketchBrawlPlayer[]) => void;
+  startTurn: (data: SketchBrawlTurnData, socketId: string) => void;
   updateHint: (hint: string) => void;
   setSecretWord: (word: string | null) => void;
   addChatMessage: (msg: Omit<ChatMessage, 'id'>) => void;
   updateScores: (scores: Record<string, number>) => void;
   markPlayerSolved: (socketId: string) => void;
-  endTurn: (data: ScribblTurnEndData) => void;
+  endTurn: (data: SketchBrawlTurnEndData) => void;
   updateTimeLeft: (ms: number) => void;
   resetGame: () => void;
 }
@@ -69,7 +69,7 @@ interface ScribblState {
 const getInitState = () => ({
   lobbyId: null,
   status: 'waiting' as const,
-  players: [] as ScribblPlayer[],
+  players: [] as SketchBrawlPlayer[],
   drawer: null,
   isDrawer: false,
   hint: null,
@@ -82,7 +82,7 @@ const getInitState = () => ({
   turnEndData: null,
 });
 
-export const useScribblStore = create<ScribblState>((set, get) => ({
+export const useSketchBrawlStore = create<SketchBrawlState>((set, get) => ({
   ...getInitState(),
 
   setLobby: (data) => set({
@@ -131,3 +131,4 @@ export const useScribblStore = create<ScribblState>((set, get) => ({
 
   resetGame: () => set(getInitState()),
 }));
+

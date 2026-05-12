@@ -24,7 +24,7 @@ export interface MatchStartPayload {
   opponent: { username: string; elo: number };
   wordLength: number;
   maxGuesses: number;
-  mode?: 'brawl' | 'word_chain' | 'anagrams' | 'scribbl';
+  mode?: 'brawl' | 'word_chain' | 'anagrams' | 'sketchbrawl';
   scrambled?: string;
   currentWord?: string;
   targetScore?: number;
@@ -47,3 +47,4 @@ export interface GauntletResult {
 export type GameStatus = 'idle' | 'queue' | 'playing' | 'won' | 'lost' | 'draw';
 
 export interface PlayerInfo { username: string; elo: number; }
+
