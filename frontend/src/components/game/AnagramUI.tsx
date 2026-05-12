@@ -27,13 +27,13 @@ export function AnagramUI({ matchId, disabled = false }: { matchId: string; disa
 
   return (
     <div style={{ width: '100%', maxWidth: 600, margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div className="wb-card" style={{ padding: '12px 24px', textAlign: 'center', flex: 1, marginRight: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24, gap: 12, flexWrap: 'wrap' }}>
+        <div className="wb-card" style={{ padding: '12px 24px', textAlign: 'center', flex: '1 1 180px' }}>
           <p className="font-hand" style={{ fontSize: '1.2rem' }}>{you?.username}</p>
           <p className="font-hand" style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--wb-blue)' }}>{scores.you}</p>
           <p style={{ fontSize: '0.75rem', color: 'var(--wb-ink-faint)' }}>Target {targetScore ?? 250}</p>
         </div>
-        <div className="wb-card" style={{ padding: '12px 24px', textAlign: 'center', flex: 1, marginLeft: 12 }}>
+        <div className="wb-card" style={{ padding: '12px 24px', textAlign: 'center', flex: '1 1 180px' }}>
           <p className="font-hand" style={{ fontSize: '1.2rem' }}>{opponent?.username}</p>
           <p className="font-hand" style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--wb-red)' }}>{scores.opponent}</p>
           <p style={{ fontSize: '0.75rem', color: 'var(--wb-ink-faint)' }}>{secondsLeft !== null ? `${secondsLeft}s left` : 'Speed round'}</p>
@@ -49,7 +49,7 @@ export function AnagramUI({ matchId, disabled = false }: { matchId: string; disa
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 1.2, opacity: 0 }}
             className="font-hand" 
-            style={{ fontSize: '4.5rem', fontWeight: 700, color: 'var(--wb-ink)', letterSpacing: 8, textTransform: 'uppercase' }}
+            style={{ fontSize: 'clamp(2rem, 12vw, 4.5rem)', fontWeight: 700, color: 'var(--wb-ink)', letterSpacing: 'clamp(2px, 2vw, 8px)', textTransform: 'uppercase' }}
           >
             {scrambledWord || '...'}
           </motion.h2>

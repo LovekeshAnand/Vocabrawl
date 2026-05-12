@@ -30,7 +30,7 @@ export default function LoginPage() {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Navbar />
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-        <motion.div className="wb-card" style={{ width: '100%', maxWidth: 420, padding: '40px 36px' }}
+        <motion.div className="wb-card" style={{ width: '100%', maxWidth: 420, padding: 'clamp(24px, 8vw, 40px) clamp(20px, 6vw, 36px)' }}
           initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-hand" style={{ fontSize: '2.4rem', fontWeight: 700, color: 'var(--wb-ink)', marginBottom: 6 }}>✏️ Welcome Back</h1>
           <p style={{ color: 'var(--wb-ink-faint)', fontSize: '0.9rem', marginBottom: 28 }}>Log in to protect your ELO.</p>

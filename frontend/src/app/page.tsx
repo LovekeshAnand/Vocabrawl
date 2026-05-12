@@ -82,7 +82,7 @@ export default function HomePage() {
                 initial={{ rotateY: 90, opacity: 0 }}
                 animate={{ rotateY: 0, opacity: 1 }}
                 transition={{ delay: i * 0.1, type: 'spring', stiffness: 200 }}
-                style={{ width: 48, height: 48, fontSize: '1.6rem', boxShadow: 'var(--shadow-md)' }}
+                style={{ width: 'clamp(38px, 10vw, 48px)', height: 'clamp(38px, 10vw, 48px)', fontSize: 'clamp(1.2rem, 4vw, 1.6rem)', boxShadow: 'var(--shadow-md)' }}
               >
                 {l}
               </motion.div>
@@ -119,7 +119,7 @@ export default function HomePage() {
           <p style={{ color: 'var(--wb-ink-light)', fontSize: '1.2rem' }}>Three ways to play, one way to win.</p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 30 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 30 }}>
           <GlassCard intensity="high" style={{ padding: 40, display: 'flex', flexDirection: 'column', gap: 24 }}>
             <div style={{ color: 'var(--wb-indigo)', display: 'flex', alignItems: 'center', gap: 16 }}>
               <Zap size={40} />
@@ -163,7 +163,7 @@ export default function HomePage() {
 
       {/* Feature Section */}
       <section style={{ padding: '80px 24px', maxWidth: 1400, margin: '0 auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 30 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 30 }}>
           <GlassCard intensity="mid" style={{ padding: 40 }}>
             <div style={{ color: 'var(--wb-blue)', marginBottom: 24 }}><Sparkles size={48} /></div>
             <h3 className="font-hand" style={{ fontSize: '2.2rem', marginBottom: 16 }}>Beautiful Lines</h3>
@@ -193,8 +193,8 @@ export default function HomePage() {
       {/* Pro Features */}
       <section style={{ padding: '100px 24px', background: 'var(--wb-paper)', borderTop: '2.5px solid var(--wb-border)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-          <h2 className="font-hand" style={{ fontSize: '3.5rem', marginBottom: 60 }}>Why You&apos;ll Love VocaBrawl</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 40 }}>
+          <h2 className="font-hand" style={{ fontSize: 'clamp(2.2rem, 8vw, 3.5rem)', marginBottom: 60 }}>Why You&apos;ll Love VocaBrawl</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 40 }}>
             {[
               { icon: <Gamepad2 size={32} />, title: "So Smooth", desc: "Built to feel incredibly responsive on any device." },
               { icon: <MousePointer2 size={32} />, title: "Artist Tools", desc: "A vibrant 24-color palette and easy-to-use brushes." },

@@ -113,7 +113,7 @@ export function ScribblUI() {
           Lobby Code: <strong style={{ color: 'var(--wb-blue)' }}>{lobbyId}</strong>
         </p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 12, marginBottom: 32 }}>
+        <div className="wb-responsive-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 12, marginBottom: 32 }}>
           {players.map((p, i) => (
             <div key={i} style={{ padding: '12px', background: 'var(--wb-paper-alt)', borderRadius: 8, border: '1.5px solid var(--wb-border)' }}>
               <span className="font-hand">{p.username} {p.isHost && '👑'}</span>
@@ -185,7 +185,7 @@ export function ScribblUI() {
       <div className="scribbl-main">
         {/* Header (Word & Time) */}
         <GlassCard intensity="low" className="scribbl-topbar">
-          <div className="font-hand" style={{ fontSize: '1.2rem', color: 'var(--wb-ink-faint)' }}>
+          <div className="font-hand" style={{ fontSize: 'clamp(0.9rem, 4vw, 1.2rem)', color: 'var(--wb-ink-faint)' }}>
             Round {round} of {totalRounds}
           </div>
           <div style={{ textAlign: 'center' }}>
@@ -203,7 +203,7 @@ export function ScribblUI() {
                   className="font-hand" 
                   animate={isDrawer ? { scale: [1, 1.02, 1] } : {}}
                   transition={{ repeat: Infinity, duration: 2 }}
-                  style={{ fontSize: '1.8rem', fontWeight: 700, letterSpacing: isDrawer ? 2 : 6, color: 'var(--wb-ink)', margin: 0 }}
+                  style={{ fontSize: 'clamp(1.2rem, 6vw, 1.8rem)', fontWeight: 700, letterSpacing: isDrawer ? 2 : 6, color: 'var(--wb-ink)', margin: 0 }}
                 >
                   {isDrawer ? secretWord : hint}
                 </motion.p>

@@ -41,13 +41,13 @@ export function WordChainUI({ matchId, socketId, disabled = false }: { matchId: 
 
   return (
     <div style={{ width: '100%', maxWidth: 600, margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div className="wb-card" style={{ padding: '12px 24px', textAlign: 'center', flex: 1, marginRight: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24, gap: 12, flexWrap: 'wrap' }}>
+        <div className="wb-card" style={{ padding: '12px 24px', textAlign: 'center', flex: '1 1 180px' }}>
           <p className="font-hand" style={{ fontSize: '1.2rem' }}>{you?.username}</p>
           <p className="font-hand" style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--wb-indigo)' }}>{scores.you}</p>
           <p style={{ fontSize: '0.75rem', color: 'var(--wb-ink-faint)' }}>Target {targetScore ?? 100}</p>
         </div>
-        <div className="wb-card" style={{ padding: '12px 24px', textAlign: 'center', flex: 1, marginLeft: 12 }}>
+        <div className="wb-card" style={{ padding: '12px 24px', textAlign: 'center', flex: '1 1 180px' }}>
           <p className="font-hand" style={{ fontSize: '1.2rem' }}>{opponent?.username}</p>
           <p className="font-hand" style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--wb-amber)' }}>{scores.opponent}</p>
           <p style={{ fontSize: '0.75rem', color: 'var(--wb-ink-faint)' }}>{secondsLeft !== null ? `${secondsLeft}s left` : 'Live duel'}</p>
@@ -56,7 +56,7 @@ export function WordChainUI({ matchId, socketId, disabled = false }: { matchId: 
 
       <div className="wb-card" style={{ padding: 40, textAlign: 'center', marginBottom: 32 }}>
         <p className="font-hand" style={{ fontSize: '1.5rem', color: 'var(--wb-ink-light)', marginBottom: 8 }}>Current Word:</p>
-        <h2 className="font-hand" style={{ fontSize: '4rem', fontWeight: 700, color: 'var(--wb-ink)', letterSpacing: 2 }}>
+        <h2 className="font-hand" style={{ fontSize: 'clamp(2rem, 12vw, 4rem)', fontWeight: 700, color: 'var(--wb-ink)', letterSpacing: 2 }}>
           {currentChainWord || '...'}
         </h2>
         <div style={{ marginTop: 16 }}>

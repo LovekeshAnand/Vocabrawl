@@ -28,11 +28,11 @@ export function Footer() {
     <footer style={{ 
       borderTop: '2.5px solid var(--wb-border)', 
       background: 'var(--wb-paper)', 
-      padding: '60px 40px 40px', 
+      padding: 'clamp(40px, 10vw, 60px) clamp(20px, 5vw, 40px) 40px', 
       marginTop: 'auto' 
     }}>
       <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 60, marginBottom: 60 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'clamp(30px, 5vw, 60px)', marginBottom: 60 }}>
           
           {/* Brand Column */}
           <div>

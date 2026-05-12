@@ -209,13 +209,13 @@ export default function ArenaLobbyPage() {
 
       <main style={{ flex: 1, padding: '40px 24px', maxWidth: 1200, margin: '0 auto', width: '100%' }}>
         <div style={{ marginBottom: 36 }}>
-          <h1 className="font-hand" style={{ fontSize: '3.5rem', fontWeight: 950, marginBottom: 8 }}>Battle Arena</h1>
+          <h1 className="font-hand" style={{ fontSize: 'clamp(2.4rem, 8vw, 3.5rem)', fontWeight: 950, marginBottom: 8 }}>Battle Arena</h1>
           <p style={{ fontSize: '1.1rem', color: 'var(--wb-ink-light)', maxWidth: 760 }}>
             Choose the game first, then decide whether you want ranked matchmaking, a public room, or a private invite.
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(240px, 300px) minmax(0, 1fr)', gap: 32, alignItems: 'start' }}>
+        <div className="wb-responsive-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(240px, 300px) minmax(0, 1fr)', gap: 32, alignItems: 'start' }}>
           <aside style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
             <GlassCard intensity="mid" style={{ padding: 24, textAlign: 'center' }}>
               <div style={{
@@ -257,7 +257,7 @@ export default function ArenaLobbyPage() {
             </div>
 
             {activeTab === 'ranked' && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
                 {gameModes.map(game => {
                   const searchingThisMode = isQueueing && queueMode === game.mode;
                   return (

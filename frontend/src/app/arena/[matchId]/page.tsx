@@ -199,7 +199,7 @@ export default function ArenaPage() {
           <motion.div className="wb-card" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
             style={{ textAlign: 'center', padding: 24, marginTop: 32, maxWidth: 480, margin: '32px auto 0' }}>
             <p className="font-hand" style={{ fontSize: '1.3rem', color: 'var(--wb-ink-light)', marginBottom: 8 }}>The word was:</p>
-            <p className="font-hand" style={{ fontSize: '3rem', fontWeight: 700, color: 'var(--wb-ink)', letterSpacing: 4 }}>{secretWord}</p>
+            <p className="font-hand" style={{ fontSize: 'clamp(1.8rem, 10vw, 3rem)', fontWeight: 700, color: 'var(--wb-ink)', letterSpacing: 4 }}>{secretWord}</p>
             <div className="wb-button-row" style={{ marginTop: 20 }}>
               <button className="wb-btn wb-btn-primary" onClick={() => router.push('/')}>Play Again</button>
               <button className="wb-btn" onClick={() => router.push('/leaderboard')}>Leaderboard</button>

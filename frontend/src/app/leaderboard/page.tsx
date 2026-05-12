@@ -33,7 +33,7 @@ export default async function LeaderboardPage() {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main style={{ flex: 1, padding: '40px 24px', maxWidth: 800, margin: '0 auto', width: '100%' }}>
-        <h1 className="font-hand" style={{ fontSize: '3rem', fontWeight: 700, color: 'var(--wb-ink)', marginBottom: 8 }}>🏆 Global Leaderboard</h1>
+        <h1 className="font-hand" style={{ fontSize: 'clamp(2.2rem, 8vw, 3rem)', fontWeight: 700, color: 'var(--wb-ink)', marginBottom: 8 }}>🏆 Global Leaderboard</h1>
         <p style={{ color: 'var(--wb-ink-light)', marginBottom: 32 }}>Top players ranked by ELO. Updated after every match.</p>
 
         {board.length === 0 ? (
@@ -41,7 +41,8 @@ export default async function LeaderboardPage() {
             <p className="font-hand" style={{ fontSize: '1.5rem', color: 'var(--wb-ink-faint)' }}>No matches played yet. Be the first! ⚔️</p>
           </div>
         ) : (
-          <div className="wb-card" style={{ overflow: 'hidden' }}>
+          <div className="wb-leaderboard-wrapper">
+            <div className="wb-card" style={{ overflow: 'hidden' }}>
             {/* Header */}
             <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr 120px 120px', padding: '12px 24px', background: 'var(--wb-ink)', color: 'white' }}>
               {['#', 'Player', 'ELO', 'W/L'].map(h => (
@@ -77,6 +78,7 @@ export default async function LeaderboardPage() {
               );
             })}
           </div>
+        </div>
         )}
       </main>
       <Footer />

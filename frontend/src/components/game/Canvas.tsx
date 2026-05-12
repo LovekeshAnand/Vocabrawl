@@ -220,8 +220,8 @@ export function Canvas({ lobbyId, isDrawer, width = 1000, height = 700 }: Canvas
       </div>
 
       {isDrawer && (
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <div className="scribbl-tools">
+        <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+          <div className="scribbl-tools" style={{ flexWrap: 'wrap', justifyContent: 'center' }}>
             <div className="scribbl-color-grid">
               {colors.map(c => (
                 <button 

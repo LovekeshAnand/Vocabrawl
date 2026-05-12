@@ -200,7 +200,7 @@ export default function LobbiesPage() {
       <main style={{ flex: 1, padding: '48px 24px', maxWidth: 1100, margin: '0 auto', width: '100%' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 36, flexWrap: 'wrap', gap: 16 }}>
           <div>
-            <h1 className="font-hand" style={{ fontSize: '3rem', fontWeight: 700, color: 'var(--wb-ink)' }}>
+            <h1 className="font-hand" style={{ fontSize: 'clamp(2.2rem, 8vw, 3rem)', fontWeight: 700, color: 'var(--wb-ink)' }}>
               Public Lobbies
             </h1>
             <p style={{ color: 'var(--wb-ink-light)', maxWidth: 640 }}>
@@ -236,7 +236,7 @@ export default function LobbiesPage() {
         </div>
 
         {showCreateModal && (
-          <div className="wb-card" style={{ padding: 24, marginBottom: 32, display: 'flex', gap: 16, alignItems: 'flex-end', background: 'var(--wb-paper)' }}>
+          <div className="wb-card wb-mobile-stack" style={{ padding: 24, marginBottom: 32, display: 'flex', gap: 16, alignItems: 'flex-end', background: 'var(--wb-paper)' }}>
             <div style={{ flex: 1 }}>
               <label className="font-hand" style={{ display: 'block', marginBottom: 8, fontSize: '1.1rem' }}>Room Visibility</label>
               <select
@@ -267,7 +267,7 @@ export default function LobbiesPage() {
               <button className="wb-btn" onClick={() => setShowCreateModal(true)}>Create Scribbl</button>
             </div>
             {scribblLobbies.length > 0 ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 18 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 18 }}>
                 {scribblLobbies.map(renderLobbyCard)}
               </div>
             ) : (
@@ -292,7 +292,7 @@ export default function LobbiesPage() {
                   </button>
                 </div>
                 {rooms.length > 0 ? (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 18 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 18 }}>
                     {rooms.map(renderLobbyCard)}
                   </div>
                 ) : (

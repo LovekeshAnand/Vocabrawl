@@ -45,7 +45,7 @@ export default function AboutPage() {
       <Navbar />
       <main style={{ flex: 1, padding: '48px 24px', maxWidth: 860, margin: '0 auto', width: '100%' }}>
 
-        <h1 className="font-hand" style={{ fontSize: '3.2rem', fontWeight: 700, color: 'var(--wb-ink)', marginBottom: 8 }}>
+        <h1 className="font-hand" style={{ fontSize: 'clamp(2.2rem, 8vw, 3.2rem)', fontWeight: 700, color: 'var(--wb-ink)', marginBottom: 8 }}>
           About VocaBrawl ✏️
         </h1>
         <p style={{ color: 'var(--wb-ink-light)', fontSize: '1.05rem', marginBottom: 48 }}>
@@ -55,7 +55,7 @@ export default function AboutPage() {
         {/* Sections */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
           {SECTIONS.map(s => (
-            <div key={s.title} className="wb-card" style={{ padding: '28px 32px' }}>
+            <div key={s.title} className="wb-card" style={{ padding: 'clamp(20px, 5vw, 32px)' }}>
               <h2 className="font-hand" style={{ fontSize: '1.9rem', fontWeight: 700, color: 'var(--wb-ink)', marginBottom: 12 }}>
                 {s.emoji} {s.title}
               </h2>
@@ -106,7 +106,7 @@ export default function AboutPage() {
         <h2 className="font-hand" style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--wb-ink)', marginBottom: 24 }}>❓ FAQ</h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 48 }}>
           {FAQS.map(faq => (
-            <div key={faq.q} className="wb-card" style={{ padding: '20px 28px' }}>
+            <div key={faq.q} className="wb-card" style={{ padding: 'clamp(16px, 4vw, 28px)' }}>
               <p className="font-hand" style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--wb-ink)', marginBottom: 8 }}>Q: {faq.q}</p>
               <p style={{ color: 'var(--wb-ink-light)', fontSize: '0.95rem', lineHeight: 1.7 }}>A: {faq.a}</p>
             </div>

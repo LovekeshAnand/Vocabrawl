@@ -19,7 +19,7 @@ export function GlassCard({ children, intensity = 'mid', style, ...props }: Glas
         backdropFilter: `blur(${blur}px)`,
         WebkitBackdropFilter: `blur(${blur}px)`,
         border: '1.5px solid var(--wb-border)',
-        boxShadow: 'var(--shadow-md)',
+        boxShadow: 'var(--shadow-md), inset 0 1px 0 rgba(255,255,255,0.05)',
         borderRadius: 12,
         ...style
       }}
